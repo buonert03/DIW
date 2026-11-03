@@ -120,7 +120,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import { obtenerEspecialidades } from "../api/especialidades";
+import { obtenerEspecialidades } from "../api/especialidades.js";
 import {
   getDoctores,
   saveDoctor,

@@ -17,7 +17,7 @@
     "express": "^5.2.1",
     "mongodb": "^7.6.0",
     "mongoos": "^0.0.1-security",
-    "mongoose": "^9.10.2",
+    "mongoose": "^9.11.4",
     "vue": "^3.5.42",
     "vue-router": "^5.3.1"
   },

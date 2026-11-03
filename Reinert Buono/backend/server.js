@@ -14,7 +14,7 @@ app.use('/api/pacientes', pacientesRutas);
 app.use('/api/doctores', doctoresRutas);
 
 
-//usa el port devinido en las variables del entorno y si no coge el 3000
+//usa el port deFinido en las variables del entorno y si no coge el 3000
 const PORT = process.env.PORT || 3000;
 
 //url connexion con mongodb
