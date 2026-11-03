@@ -33,8 +33,8 @@
       <h2>Información de contacto</h2>
       <ul>
         <li><strong>Horario:</strong> Lunes a Viernes, 8:00 - 20:00</li>
-        <li><strong>Dirección:</strong> Rúa de Eduardo Cabello, 12, 36216 Vigo, Pontevedra</li>
-        <li><strong>Teléfono:</strong> 986 45 12 30</li>
+        <li><strong>Dirección:</strong>Camiño das Relfas, 9</li>
+        <li><strong>Teléfono:</strong> 604 08 73 15</li>
         <li><strong>Email:</strong> info@sanidadteis.gal</li>
       </ul>
     </section>

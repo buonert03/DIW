@@ -4,11 +4,11 @@
       <router-link to="/avisolegal">Aviso Legal</router-link>
       <span>  © {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 por </span>
       <a
-        href="https://github.com/P5tyos"
+        href="https://github.com/buonert03/DIW"
         target="_blank"
         rel="noopener"
         aria-label="Gergely Horvath en GitHub (abre en una nueva pestaña)"
-      > Gergely Horvath </a>
+      > Matheus Robert Reinert Buono </a>
     </div>
   </footer>
 </template>
