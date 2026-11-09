@@ -121,6 +121,7 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { obtenerEspecialidades } from "../api/especialidades.js";
+import { useDoctorStore } from "../stores/doctorStore.js";
 import {
   getDoctores,
   saveDoctor,
@@ -150,6 +151,11 @@ onMounted(async () => {
   doctores.value = await getDoctores();
   especialidades.value = await obtenerEspecialidades();
 });
+
+function seleccionarDoctor(doctor) {
+  const doctorStore = useDoctorStore();
+  doctorStore.seleccionarDoctor(doctor);
+}
 
 //=============== FUNCIONES PRINCIPALES de BBDD ==================
 

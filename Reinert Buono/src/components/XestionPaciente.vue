@@ -172,6 +172,7 @@
 
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
+import { usePacientesStore } from "../stores/pacientes.js";
 import { 
   getPacientes, 
   savePaciente, 
@@ -213,6 +214,11 @@ onMounted(async() => {
   provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
   pacientes.value = await getPacientes();   //carga los usuarios guardados
 });
+
+function seleccionarPaciente(paciente) {
+  const pacienteStore = usePacientesStore();
+  pacienteStore.seleccionarPaciente(paciente);
+}
 
 // carga os municipios da provincia elixida no selector (ou baleira a lista se non hai provincia)
 async function cargarMunicipios() {
@@ -256,6 +262,7 @@ async function guardarPaciente() {
           const pacienteGuardado = await savePaciente(novoPaciente);
           pacientes.value.push(pacienteGuardado);
           console.log("Paciente gardado correctamente");
+          seleccionarPaciente(novoPaciente); // o usePacienteStore.seleccionarPaciente(novoPaciente)
         }
             limpiarFormpac();  //baleira o formulario e sae do modo edición
   } catch (error) {
@@ -290,7 +297,7 @@ async function editarUsuario(index){
   delete novoPaciente._id;
   editando.value = true;
   await cargarMunicipios();
-
+  seleccionarPaciente(paciente);
 }
 
 // Zona de funcións auxiliares
@@ -388,7 +395,8 @@ async function buscarPaciente() {
     delete novoPaciente._id;
     editando.value = true;
     await cargarMunicipios();
-
+    seleccionarPaciente(paciente);
+    
     console.log("Paciente encontrad", paciente);
   } catch(error){
       if (error.response?.status === 404 ){

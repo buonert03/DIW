@@ -1,0 +1,83 @@
+Apuntes para Greg
+
+--------------------------- DAW ---------------------------
+Marta no explicó nada nuevo, creo que ibamos a ver seguridad, pero nos pasamos toda la clase arreglando problemas con el entorno.
+Para el entorno basta con seguir las intrucciones del aula virtual.
+
+--------------------------- DIW --------------------------- 
+1. Establecer a donde queremos llegar:
+Consultar usuario registrado, crear cita, la cita aparecerá en Citas con los datos.
+
+2. La lista de citas solo mostrará las citas del usuario, no todas las citas de todos los usuarios.
+
+3. Instalar Pinia:
+
+	npm install pinia
+
+en main.js escribir: 
+
+	import { createPinia } from 'pinia'
+	const pinia = createPinia()
+	createApp(App).use(router).use(pinia).mount('#app')
+
+4. Crear carpeta 'store' dentro de src:
+Dentro creamos pacienteStore.js con el siguiente código:
+
+import { defineStore } from 'pinia'
+
+export const usePacienteStore = defineStore('paciente', {
+  state: () => ({
+        pacientes: [],
+        dnipac: null,
+        nomepac: null,
+        apelpac: null,
+  }),
+
+  actions: {
+    seleccionarPaciente(paciente) {
+        this.dnipac = paciente.dnipac;
+        this.nomepac = paciente.nomepac;
+        this.apelpac = paciente.apelpac;
+    },
+    limpiarPaciente() {
+        this.dnipac = null;
+        this.nomepac = null;
+        this.apelpac = null;
+    },
+  },
+})
+
+5. XestionPacientes.vue usará este js para almacenar los datos de los pacientes cuando selecionamos/editamos/guardamos la información de un paciente.
+En XestionPacientes.vue añadir esto dentro del <script setup></script>: import { usePacientesStore } from "../stores/pacientes.js";
+y también: 
+
+function seleccionarPaciente(paciente) {
+  const pacienteStore = usePacientesStore();
+  pacienteStore.seleccionarPaciente(paciente);
+}
+
+6. En la función guardarPaciente poner esta línea:
+seleccionarPaciente(novoPaciente); // o usePacienteStore.seleccionarPaciente(novoPaciente)
+en buscar y en editar esta:	seleccionarPaciente(paciente);
+
+7. En xestionCitas.vue:
+
+import { usePacienteStore } from "../store/pacienteStore.js"
+
+const pacienteStore = usePacienteStore();
+
+onMounted(async () => {
+	await cargarDatos();
+	novaCita.pacienteId = pacienteStore.dnipac
+});
+
+8. Si queremos limpiar cita no vendría mal añadir a la function limpiarFormCita() {}:
+usePacienteStore.limpiarPaciente();
+
+9. en src/store creamos doctorStore.js, simplemente duplicamos pacienteStore.js y le cambiamos todos los nombres de pacientes a doctores
+
+10. en xestionDoctores.vue hacer lo mismo que hicimos en xestionPacientes.vue en los pasos anteriores  pero con doctorStore.js
+
+11. Repetir para xestionCitas.vue.
+
+12. Al profesor le dieron unos errores de los que no me enteré.
