@@ -11,7 +11,7 @@ const PacienteSchema = new mongoose.Schema({
     dirpac: { type: String, required: false },
     propac: { type: String, required: false },
     munipac: { type: String, required: false },
-    lopdpac: { type: Boolean, required: true}
+    lopdpac: { type: Boolean, required: true }
     },
     {
     collection: "pacientes"

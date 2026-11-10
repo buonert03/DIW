@@ -5,6 +5,8 @@ import "dotenv/config";
 import mongoose from "mongoose"
 import pacientesRutas from './rutas/pacientes.rutas.js';
 import doctoresRutas from './rutas/doctores.rutas.js'
+import citasRutas from './rutas/citas.rutas.js';
+import { inicializarIdsCita } from './modelos/Cita.js';
 
 // Configura Express, os middlewares e as rutas da API.
 const app = express()
@@ -12,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/pacientes', pacientesRutas);
 app.use('/api/doctores', doctoresRutas);
+app.use('/api/citas', citasRutas);
 
 // Usa o porto do entorno ou 3000 como valor por defecto.
 const PORT = process.env.PORT || 3000;
@@ -45,6 +48,7 @@ app.get('/api/especialidades', (req, res) => {
 async function iniciaServer() {
     try {
         await mongoose.connect(MONGO_URI);
+        await inicializarIdsCita();
         console.log("Connectado a MongoDB");
         app.listen(PORT, () => {
             console.log(`Servidor funcionando en http://localhost:${PORT}`);

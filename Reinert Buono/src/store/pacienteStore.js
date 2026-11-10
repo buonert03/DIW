@@ -7,6 +7,7 @@ export const usePacienteStore = defineStore('paciente', {
     dnipac: null,
     nomepac: null,
     apelpac: null,
+    pacienteSeleccionado: null,
   }),
 
   actions: {
@@ -15,12 +16,14 @@ export const usePacienteStore = defineStore('paciente', {
       this.dnipac = paciente.dnipac;
       this.nomepac = paciente.nomepac;
       this.apelpac = paciente.apelpac;
+      this.pacienteSeleccionado = { ...paciente };
     },
     // Borra os datos de identificación da selección actual.
     limpiarPaciente() {
       this.dnipac = null;
       this.nomepac = null;
       this.apelpac = null;
+      this.pacienteSeleccionado = null;
     },
   },
 })

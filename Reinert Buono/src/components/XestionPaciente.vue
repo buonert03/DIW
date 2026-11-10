@@ -120,6 +120,14 @@
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
+    <button
+      v-if="editando"
+      type="button"
+      class="btn-ver-citas"
+      @click="abrirCitas(novoPaciente)"
+    >
+      Ver citas deste paciente
+    </button>
     <div class="listaxe-cabecera">
       <h3>📋 Listaxe de pacientes</h3>
       <div class="listaxe-acciones">
@@ -160,6 +168,7 @@
             <td>{{ p.munipac }}</td>
             <td class="centrado">
               <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
+              <button @click="abrirCitas(p)" title="Ver citas" :aria-label="`Ver as citas de ${p.nomepac} ${p.apelpac}`">📅</button>
               <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
             </td>
           </tr>
@@ -172,6 +181,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
 import {
@@ -186,6 +196,7 @@ import {
 const pacientes = ref([]);
 const provincias = ref([]);
 const municipios = ref([]);
+const router = useRouter();
 
 // Estado de validación y modo de edición del formulario.
 const documentoInvalido = ref(false)
@@ -291,6 +302,12 @@ async function editarUsuario(index) {
   editando.value = true;
   await cargarMunicipios();
   seleccionarPaciente(paciente);
+}
+
+// Abre a xestión de citas co paciente escollido como contexto.
+function abrirCitas(paciente) {
+  seleccionarPaciente(paciente);
+  router.push({ name: "XestionCitas" });
 }
 
 // Valida el formato y la letra de control de un DNI.
@@ -491,6 +508,11 @@ td button {
 .listaxe-acciones {
   display: flex;
   gap: 0.4rem;
+}
+
+.btn-ver-citas {
+  display: block;
+  margin: -1rem auto 2rem;
 }
 
 /* ---------- validación ---------- */

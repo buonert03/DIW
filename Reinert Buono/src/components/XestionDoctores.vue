@@ -2,12 +2,27 @@
   <div class="xestion-doctores">
     <h3>🩺 Xestión de doctores</h3>
     <form @submit.prevent="guardarDoctor">
-      <!-- fila 1: ID, apelido, nome e colexiado -->
+      <!-- fila 1: DNI, apelido, nome e colexiado -->
       <div class="fila">
         <div class="campo campo-id">
-          <label for="id">ID:</label>
-          <!-- o ID non se edita: só se mostra cando cargamos un doctor -->
-          <input id="id" v-model="novoDoctor.iddoc" type="text" disabled class="centrado" />
+          <label for="dni-doctor">DNI:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input
+            id="dni-doctor"
+            v-model.trim="novoDoctor.iddoc"
+            type="text"
+            required
+            maxlength="9"
+            autocomplete="off"
+            class="centrado"
+            :class="{ 'campo-erro': dniIncorrecto }"
+            :aria-invalid="dniIncorrecto"
+            aria-describedby="dni-doctor-erro"
+            @input="dniIncorrecto = false"
+            @blur="validarDniDoctor"
+          />
+          <span v-if="dniIncorrecto" id="dni-doctor-erro" class="mensaxe-erro" role="alert">
+            DNI ou NIE non válido
+          </span>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -87,8 +102,8 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Codigo</th>
+            <th scope="col">Nº</th>
+            <th scope="col">DNI</th>
             <th scope="col">Apelido</th>
             <th scope="col">Nome</th>
             <th scope="col">Colexiado</th>
@@ -144,6 +159,9 @@ const especialidades = ref([]);
 const editando = ref(false);
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
+const dniIncorrecto = ref(false);
+const idDoctorEditado = ref("");
+const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";
 
 // Valores ligados aos controis do formulario.
 const novoDoctor = reactive({
@@ -166,6 +184,28 @@ onMounted(async () => {
 function seleccionarDoctor(doctor) {
   const doctorStore = useDoctorStore();
   doctorStore.seleccionarDoctor(doctor);
+}
+
+function dniDoctorValido(valor) {
+  const dni = valor.trim().toUpperCase();
+  if (/^\d{8}[A-Z]$/.test(dni)) {
+    return dni[8] === LETRAS_DNI[Number(dni.slice(0, 8)) % 23];
+  }
+  if (/^[XYZ]\d{7}[A-Z]$/.test(dni)) {
+    const prefixo = { X: "0", Y: "1", Z: "2" }[dni[0]];
+    return dni[8] === LETRAS_DNI[Number(prefixo + dni.slice(1, 8)) % 23];
+  }
+  return false;
+}
+
+function validarDniDoctor() {
+  const dni = novoDoctor.iddoc.trim().toUpperCase();
+  dniIncorrecto.value = dni !== "" && !dniDoctorValido(dni);
+  if (dniDoctorValido(dni)) {
+    novoDoctor.iddoc = dni;
+  } else {
+    novoDoctor.iddoc = "";
+  }
 }
 
 // Normaliza o nome e os apelidos antes de gardalos.
@@ -214,9 +254,72 @@ const limpiarFormdoc = () => {
     }
   });
   editando.value = false;
+  idDoctorEditado.value = "";
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
+  dniIncorrecto.value = false;
 };
+
+async function guardarDoctor() {
+  validarDniDoctor();
+  validarTelefono();
+  validarCorreo();
+  if (
+    dniIncorrecto.value ||
+    telefonoIncorrecto.value ||
+    correoInvalido.value ||
+    !novoDoctor.iddoc ||
+    !novoDoctor.nomedoc ||
+    !novoDoctor.apeldoc ||
+    !novoDoctor.espedoc
+  ) {
+    return;
+  }
+
+  const datosDoctor = { ...novoDoctor };
+  try {
+    if (editando.value) {
+      await modifyDoctor(idDoctorEditado.value, datosDoctor);
+    } else {
+      await saveDoctor(datosDoctor);
+    }
+    doctores.value = await getDoctores();
+    limpiarFormdoc();
+  } catch (error) {
+    console.error("Erro ao gardar o doutor:", error);
+    window.alert(error.response?.data?.mensaje || "Non se puido gardar o doutor.");
+  }
+}
+
+function editarDoctor(index) {
+  Object.assign(novoDoctor, doctores.value[index]);
+  delete novoDoctor._id;
+  delete novoDoctor.__v;
+  editando.value = true;
+  idDoctorEditado.value = doctores.value[index].iddoc;
+  dniIncorrecto.value = false;
+  correoInvalido.value = false;
+  telefonoIncorrecto.value = false;
+  seleccionarDoctor(doctores.value[index]);
+}
+
+async function eliminarDoctor(index) {
+  const doctor = doctores.value[index];
+  if (!window.confirm(`Seguro que queres eliminar a ${doctor.nomedoc} ${doctor.apeldoc}?`)) {
+    return;
+  }
+
+  try {
+    await deleteDoctor(doctor.iddoc);
+    doctores.value = await getDoctores();
+    if (novoDoctor.iddoc === doctor.iddoc) {
+      limpiarFormdoc();
+    }
+  } catch (error) {
+    console.error("Erro ao eliminar o doutor:", error);
+    window.alert(error.response?.data?.mensaje || "Non se puido eliminar o doutor.");
+  }
+}
 </script>
 
 <style scoped>
