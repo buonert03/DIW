@@ -1,8 +1,8 @@
 import js from '@eslint/js'
 import vue from 'eslint-plugin-vue'
 import globals from 'globals'
-  //colocar en la raíz del proyecto
 
+// Configuración plana de ESLint para JavaScript y compoñentes Vue.
 export default [
   // Reglas básicas de JavaScript
   js.configs.recommended,
@@ -25,32 +25,31 @@ export default [
     },
 
     rules: {
-      // Variables declaradas pero no utilizadas
-      // Se avisa, pero no se bloquea el proyecto
+      // As variables sen uso avisan, pero non bloquean a compilación.
       'no-unused-vars': 'warn',
 
-      // Variables o funciones que no existen
+      // As referencias a variables inexistentes son erros.
       'no-undef': 'error',
 
-      // Permitimos console.log durante el desarrollo
+      // Permite mensaxes de consola durante o desenvolvemento.
       'no-console': 'off',
 
-      // Permitimos nombres de componentes como Home.vue o Login.vue
+      // Permite nomes de compoñente dunha soa palabra.
       'vue/multi-word-component-names': 'off',
 
-      // Variables del template de Vue que no se utilizan
+      // As variables de template sen uso avisan, pero non bloquean.
       'vue/no-unused-vars': 'warn',
 
-      // No modificar directamente una prop recibida
+      // Impide modificar directamente unha prop recibida.
       'vue/no-mutating-props': 'error',
 
-      // Obliga a utilizar key en v-for
+      // Esixe unha key estable nos elementos de v-for.
       'vue/require-v-for-key': 'error'
     }
   },
 
   {
-    // Directorios que no queremos analizar
+    // Exclúe dependencias instaladas e saída xerada.
     ignores: [
       'node_modules/',
       'dist/'

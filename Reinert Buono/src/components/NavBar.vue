@@ -15,7 +15,6 @@
       Sanidad Teis
     </div>
 
-    
     <button class="hamburger" @click="isOpen = !isOpen">☰</button> 
 
     <ul :class="['menu', { open: isOpen }]">
@@ -28,8 +27,10 @@
 </template>
 
 <script setup>
-import { ref } from "vue" // será boolean
-const isOpen = ref(false) // actívase cuando fago click
+import { ref } from "vue"
+
+// Controla se o menú móbil está despregado.
+const isOpen = ref(false)
 </script>
 
 <style scoped>
@@ -77,7 +78,7 @@ const isOpen = ref(false) // actívase cuando fago click
   outline-offset: 2px;
 }
 
-/* NUEVO */
+/* O botón de menú só aparece en pantallas estreitas. */
 .hamburger {
   display: none;
   background: none;
@@ -86,7 +87,6 @@ const isOpen = ref(false) // actívase cuando fago click
   font-size: 1.5rem;
 }
 
-/* NUEVO (responsive) */
 @media (max-width: 768px) {
   .hamburger {
     display: block;

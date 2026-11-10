@@ -45,10 +45,6 @@
   </div>
 </template>
 
-<script setup>
-
-</script>
-
 <style scoped>
 .sobre-nos {
   width: min(1000px, 100%);

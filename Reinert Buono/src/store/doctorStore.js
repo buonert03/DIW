@@ -1,23 +1,26 @@
 import { defineStore } from 'pinia'
 
+// Mantén dispoñible a selección de doctor entre compoñentes.
 export const useDoctorStore = defineStore('doctor', {
   state: () => ({
-        doctores: [],
-        dnipac: null,
-        nomepac: null,
-        apelpac: null,
+    doctores: [],
+    iddoc: null,
+    nomedoc: null,
+    apeldoc: null,
   }),
 
   actions: {
+    // Copia ao estado os datos identificativos do doutor seleccionado.
     seleccionarDoctor(doctor) {
-        this.dnipac = doctor.dnipac;
-        this.nomepac = doctor.nomepac;
-        this.apelpac = doctor.apelpac;
+      this.iddoc = doctor.iddoc;
+      this.nomedoc = doctor.nomedoc;
+      this.apeldoc = doctor.apeldoc;
     },
+    // Borra os datos identificativos da selección actual.
     limpiarDoctor() {
-        this.dnipac = null;
-        this.nomepac = null;
-        this.apelpac = null;
+      this.iddoc = null;
+      this.nomedoc = null;
+      this.apeldoc = null;
     },
   },
 })

@@ -31,7 +31,7 @@
   align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
-  margin: 6px 0 1rem; /* mesmo espazo que tiña cando era <ul> */
+  margin: 6px 0 1rem;
   color: white;
 }
 

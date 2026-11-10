@@ -19,10 +19,6 @@
             @focus="documentoInvalido = false"
             @blur="validarDocumento"/>
           <!-- :disabled="editando" → cando cargamos un paciente (✏️ ou 🔍) o DNI vese pero non se pode cambiar; 🧹 desbloquéao -->
-          <!-- type="button" para que non envíe o formulario ao pulsalo -->
-          <!-- 🔍 tamén se bloquea mentres editamos: co DNI bloqueado só volvería cargar o mesmo paciente -->
-          <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
-          <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
           <span v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">DNI/NIE non válido</span>
         </div>
         <div class="campo campo-apellido">
@@ -124,75 +120,83 @@
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
-    <h3>📋 Listaxe de pacientes</h3>
-    <table v-if="pacientes.length > 0">
-      <caption>Listaxe de pacientes</caption>
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">DNI/NIE</th>
-          <th scope="col">Apelido</th>
-          <th scope="col">Nome</th>
-          <th scope="col">Fecha nacemento</th>
-          <th scope="col">Telefono</th>
-          <th scope="col">Correo</th>
-          <th scope="col">Dirección</th>
-          <th scope="col">Provincia</th>
-          <th scope="col">Municipio</th>
-          <th scope="col">Accións</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(p, index) in pacientes" :key="p._id">
-          <!-- números (nº, DNI, data, teléfono) centrados; o texto queda á esquerda -->
-          <td class="centrado">{{ index + 1 }}</td>
-          <td class="centrado">{{ p.dnipac }}</td>
-          <td>{{ p.apelpac }}</td>
-          <td>{{ p.nomepac }}</td>
-          <td class="centrado">{{ p.nacipac }}</td>
-          <td class="centrado">{{ p.movilpac }}</td>
-          <td>{{ p.mailpac }}</td>
-          <td>{{ p.dirpac }}</td>
-          <td>{{ p.propac }}</td>
-          <td>{{ p.munipac }}</td>
-          <td class="centrado">
-            <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
-            <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="listaxe-cabecera">
+      <h3>📋 Listaxe de pacientes</h3>
+      <div class="listaxe-acciones">
+        <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
+        <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
+      </div>
+    </div>
+    <div v-if="pacientes.length > 0" class="tabla-contenedor" role="region" aria-label="Listaxe de pacientes" tabindex="0">
+      <table>
+        <caption>Listaxe de pacientes</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">DNI/NIE</th>
+            <th scope="col">Apelido</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Fecha nacemento</th>
+            <th scope="col">Telefono</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Dirección</th>
+            <th scope="col">Provincia</th>
+            <th scope="col">Municipio</th>
+            <th scope="col">Accións</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(p, index) in pacientes" :key="p._id">
+            <!-- números (nº, DNI, data, teléfono) centrados; o texto queda á esquerda -->
+            <td class="centrado">{{ index + 1 }}</td>
+            <td class="centrado">{{ p.dnipac }}</td>
+            <td>{{ p.apelpac }}</td>
+            <td>{{ p.nomepac }}</td>
+            <td class="centrado">{{ p.nacipac }}</td>
+            <td class="centrado">{{ p.movilpac }}</td>
+            <td>{{ p.mailpac }}</td>
+            <td>{{ p.dirpac }}</td>
+            <td>{{ p.propac }}</td>
+            <td>{{ p.munipac }}</td>
+            <td class="centrado">
+              <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
+              <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p v-else>Non hai pacientes cargados.</p>
   </div>
 </template>
 
 <script setup>
-
-/// Zona de declaracións
-
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
-import { usePacientesStore } from "../stores/pacientes.js";
-import { 
-  getPacientes, 
-  savePaciente, 
-  deletePaciente, 
-  modifyPaciente, 
-  getPacienteByDni 
+import { usePacienteStore } from "../store/pacienteStore.js";
+import {
+  getPacientes,
+  savePaciente,
+  deletePaciente,
+  modifyPaciente,
+  getPacienteByDni,
 } from "../api/pacientes.js";
 
-
-const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
-const provincias = ref([]); //almacena a lista de provincias e os seus cambios
+// Datos visibles en la tabla y opciones de los selectores de localización.
+const pacientes = ref([]);
+const provincias = ref([]);
 const municipios = ref([]);
 
+// Estado de validación y modo de edición del formulario.
 const documentoInvalido = ref(false)
 const correoInvalido = ref(false)
 const telefonoIncorrecto = ref(false)
 const editando = ref(false);
 
+// Letras de control utilizadas para validar DNI y NIE.
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
+// Valores ligados a los campos del formulario.
 const novoPaciente = reactive({
   dnipac: "",
   nomepac: "",
@@ -206,41 +210,32 @@ const novoPaciente = reactive({
   lopdpac: false
 });
 
-/// Zona de ciclo de vida
-
-// ao abrir a páxina: carga as provincias e a lista de pacientes
-onMounted(async() => {
-  //sempre se cargan estos pacientes de exemplo ao iniciar o componente
-  provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
-  pacientes.value = await getPacientes();   //carga los usuarios guardados
+// Carga los catálogos y los pacientes cuando se monta la vista.
+onMounted(async () => {
+  provincias.value = await obtenerProvincias();
+  pacientes.value = await getPacientes();
 });
 
+// Comparte la selección actual con otros componentes mediante Pinia.
 function seleccionarPaciente(paciente) {
-  const pacienteStore = usePacientesStore();
+  const pacienteStore = usePacienteStore();
   pacienteStore.seleccionarPaciente(paciente);
 }
 
-// carga os municipios da provincia elixida no selector (ou baleira a lista se non hai provincia)
+// Actualiza las opciones de municipio según la provincia seleccionada.
 async function cargarMunicipios() {
   if (novoPaciente.propac === "") {
-    municipios.value=[];
+    municipios.value = [];
     return;
   }
 
-  const provincia = provincias.value.find(
-    p => p.nm === novoPaciente.propac
-  );
-
-//obtener los municipios de la provincia seleccionada
-municipios.value = await obtenerMunicipios(provincia.id); 
+  const provincia = provincias.value.find((p) => p.nm === novoPaciente.propac);
+  municipios.value = await obtenerMunicipios(provincia.id);
 }
 
-/// Zona de métodos ou funcións
-
-// botón Gardar: modifica o paciente se estamos editando, se non créao novo
+// Valida los campos obligatorios y crea o actualiza el paciente.
 async function guardarPaciente() {
-  // validamos DNI e teléfono tamén aquí: se se preme Enter dentro dun campo, o @blur non se executa
-  // e o dato sen validar chegaría á BD. Se algún non vale, mostramos o erro e non gardamos.
+  // También se valida aquí porque enviar el formulario con Enter puede saltarse el blur.
   validarDocumento();
   validarTelefono();
   if (documentoInvalido.value || telefonoIncorrecto.value) {
@@ -248,165 +243,158 @@ async function guardarPaciente() {
   }
 
   try {
-        if (editando.value){
-          const pacienteModificado = await modifyPaciente(novoPaciente.dnipac, novoPaciente);
-          const index = pacientes.value.findIndex (
-            (p) => p.dnipac === novoPaciente.dnipac
-          );
+    if (editando.value) {
+      const pacienteModificado = await modifyPaciente(novoPaciente.dnipac, novoPaciente);
+      const index = pacientes.value.findIndex(
+        (p) => p.dnipac === novoPaciente.dnipac
+      );
 
-          if (index !== -1){
-            pacientes.value[index] =pacienteModificado;
-          }
-          console.log("Paciente modificado correctamente")
-        } else {
-          const pacienteGuardado = await savePaciente(novoPaciente);
-          pacientes.value.push(pacienteGuardado);
-          console.log("Paciente gardado correctamente");
-          seleccionarPaciente(novoPaciente); // o usePacienteStore.seleccionarPaciente(novoPaciente)
-        }
-            limpiarFormpac();  //baleira o formulario e sae do modo edición
+      if (index !== -1) {
+        pacientes.value[index] = pacienteModificado;
+      }
+      console.log("Paciente modificado correctamente");
+    } else {
+      const pacienteGuardado = await savePaciente(novoPaciente);
+      pacientes.value.push(pacienteGuardado);
+      console.log("Paciente gardado correctamente");
+      seleccionarPaciente(novoPaciente);
+    }
+    limpiarFormpac();
   } catch (error) {
     console.error("Error ao gardar paciente:", error);
   }
   pacientes.value = await getPacientes();
 }
 
-// botón 🗑️: borra o paciente da BD e da táboa
+// Pide confirmación, elimina el paciente y lo quita de la tabla.
 async function eliminarPaciente(index) {
-  // pide confirmación antes de borrar; se o usuario preme Cancelar non se fai nada
   const p = pacientes.value[index];
   if (!confirm(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`)) {
     return;
   }
 
   try {
-    await deletePaciente(pacientes.value[index].dnipac); //elimina o paciente da base de datos
-    pacientes.value.splice(index, 1); //elimina o paciente da lista
+    await deletePaciente(p.dnipac);
+    pacientes.value.splice(index, 1);
     console.log("Paciente eliminado correctamente");
-    getPacientes(); // Actualiza la lista de pacientes después de eliminar
   } catch (error) {
     console.error("Error ao eliminar paciente:", error);
   }
 }
 
-// botón ✏️: carga o paciente da táboa no formulario e activa o modo edición
-async function editarUsuario(index){
-  const paciente=pacientes.value[index];
+// Carga en el formulario un paciente de la tabla y activa el modo edición.
+async function editarUsuario(index) {
+  const paciente = pacientes.value[index];
   Object.assign(novoPaciente, paciente);
-  //evitar que se carge el _id n el formulasrio de MongoDB
+  // El identificador de MongoDB no es un campo editable del formulario.
   delete novoPaciente._id;
   editando.value = true;
   await cargarMunicipios();
   seleccionarPaciente(paciente);
 }
 
-// Zona de funcións auxiliares
-
-// comproba que un DNI (8 números + letra) ten a letra correcta
+// Valida el formato y la letra de control de un DNI.
 function validarDNI(valor) {
-  if (!/^\d{8}[A-Z]$/.test(valor)) return false
-  const numero = parseInt(valor.slice(0, 8), 10)
-  return valor.charAt(8) === LETRAS_DNI[numero % 23]
+  if (!/^\d{8}[A-Z]$/.test(valor)) return false;
+  const numero = parseInt(valor.slice(0, 8), 10);
+  return valor.charAt(8) === LETRAS_DNI[numero % 23];
 }
 
-// comproba que un NIE (X/Y/Z + 7 números + letra) ten a letra correcta
+// Valida el formato y la letra de control de un NIE.
 function validarNIE(valor) {
-  if (!/^[XYZ]\d{7}[A-Z]$/.test(valor)) return false
-  const prefixo = { X: "0", Y: "1", Z: "2" }[valor.charAt(0)]
-  const numero = parseInt(prefixo + valor.slice(1, 8), 10)
-  return valor.charAt(8) === LETRAS_DNI[numero % 23]
+  if (!/^[XYZ]\d{7}[A-Z]$/.test(valor)) return false;
+  const prefixo = { X: "0", Y: "1", Z: "2" }[valor.charAt(0)];
+  const numero = parseInt(prefixo + valor.slice(1, 8), 10);
+  return valor.charAt(8) === LETRAS_DNI[numero % 23];
 }
 
-// ao saír do campo DNI: valida DNI/NIE, mostra o erro e baleira o campo se non vale
+// Normaliza el documento a mayúsculas y muestra un error si no es válido.
 function validarDocumento() {
-  const valor = novoPaciente.dnipac.trim().toUpperCase()
-  const esValido = validarDNI(valor) || validarNIE(valor)
+  const valor = novoPaciente.dnipac.trim().toUpperCase();
+  const esValido = validarDNI(valor) || validarNIE(valor);
 
-  documentoInvalido.value = valor !== "" && !esValido
+  documentoInvalido.value = valor !== "" && !esValido;
 
   if (esValido) {
-    novoPaciente.dnipac = valor
+    novoPaciente.dnipac = valor;
   } else {
-    novoPaciente.dnipac = ""
+    novoPaciente.dnipac = "";
   }
-  
 }
 
-// ao saír do campo Correo: valida o formato e baleira o campo se non vale
+// Normaliza el correo y marca el campo si no tiene un formato válido.
 function validarCorreo() {
-  const valor = novoPaciente.mailpac.trim().toLowerCase()
-  correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
+  const valor = novoPaciente.mailpac.trim().toLowerCase();
+  correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 
   if (correoInvalido.value) {
-    novoPaciente.mailpac = ""
+    novoPaciente.mailpac = "";
   } else {
-    novoPaciente.mailpac = valor
+    novoPaciente.mailpac = valor;
   }
 }
 
-// ao saír do campo Teléfono: valida que sexa un móbil de 9 cifras (6 ou 7 ao principio)
+// Normaliza el teléfono y comprueba que tenga nueve cifras y empiece por 6 o 7.
 function validarTelefono() {
-  const valor = novoPaciente.movilpac.trim()
-  telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor)
-  
+  const valor = novoPaciente.movilpac.trim();
+  telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor);
+
   if (telefonoIncorrecto.value) {
-    novoPaciente.movilpac = ""
+    novoPaciente.movilpac = "";
   } else {
-    novoPaciente.movilpac = valor
+    novoPaciente.movilpac = valor;
   }
 }
 
-// pon en maiúscula a primeira letra de cada palabra (ex: "ana maría" → "Ana María")
+// Pone en mayúscula la primera letra de cada palabra y recorta espacios sobrantes.
 function formatearNome(valor) {
   return valor
-    .trim()        // quita os espazos do principio e do final (un nome só con espazos queda baleiro e Gardar desactívase)
-    .split(/\s+/)  // separa polas palabras aínda que haxa varios espazos seguidos entre elas
+    .trim()
+    .split(/\s+/)
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
-    .join(" ")
+    .join(" ");
 }
 
-// botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
+// Reinicia campos, validaciones y opciones dependientes del formulario.
 const limpiarFormpac = () => {
   Object.keys(novoPaciente).forEach((key) => {
-    if (typeof novoPaciente[key] === "boolean"){
-      novoPaciente[key] = false;   //reinicia los booleanos a false
+    if (typeof novoPaciente[key] === "boolean") {
+      novoPaciente[key] = false;
     } else {
-      novoPaciente[key] = ""; //reinicia el resto
+      novoPaciente[key] = "";
     }
-  })
+  });
   editando.value = false;
   documentoInvalido.value = false;
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
-  municipios.value = []; // baleira tamén a lista de municipios da provincia anterior
+  municipios.value = [];
 };
 
-// botón 🔍: busca o paciente polo DNI na BD e cárgao no formulario para editalo
+// Busca por DNI y carga el resultado en el formulario para editarlo.
 async function buscarPaciente() {
   try {
     const dni = novoPaciente.dnipac.trim();
     if (!dni) {
-      console.log ("introduce un dni!");
-      return ;
+      console.log("introduce un dni!");
+      return;
     }
-    const paciente= await getPacienteByDni(dni);
+    const paciente = await getPacienteByDni(dni);
     Object.assign(novoPaciente, paciente);
-    //evitar que se carge el _id de MongoDB no formulario
+    // El identificador de MongoDB no es un campo editable del formulario.
     delete novoPaciente._id;
     editando.value = true;
     await cargarMunicipios();
     seleccionarPaciente(paciente);
-    
     console.log("Paciente encontrad", paciente);
-  } catch(error){
-      if (error.response?.status === 404 ){
-        // non existe: saímos do modo edición para que Gardar cree un paciente novo en vez de modificar un que non existe
-        // (co DNI e 🔍 bloqueados ao editar isto xa non debería pasar desde o formulario, pero queda como seguridade)
-        editando.value = false;
-        console.log("Paciente no encontrad");
-      } else {
-        console.log("Error al buscar paciente:",error)
-      }
+  } catch (error) {
+    if (error.response?.status === 404) {
+      // El siguiente guardado debe crear el registro en vez de actualizar uno inexistente.
+      editando.value = false;
+      console.log("Paciente no encontrad");
+    } else {
+      console.log("Error al buscar paciente:", error);
+    }
   }
 }
 
@@ -439,85 +427,25 @@ form {
 }
 
 .fila {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: 1rem;
 }
 
-/* label e input na mesma liña; por defecto cada campo ocupa 1 parte da fila */
 .campo {
-  flex: 1;
-  min-width: 0; /* deixa encoller o campo e o seu input (por defecto un input mide ~20 caracteres) para que a fila non se saia do panel */
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* campos máis anchos */
-.campo-nome,
-.campo-apellido {
-  flex: 3;
-}
-
-/* DNI: só o ancho que precisa (9 caracteres), o resto da fila queda para nome e apelido */
-.campo-dni {
-  flex: 0 0 auto;
-}
-
-.campo-dni input {
-  flex: none;
-  width: 9em;
-}
-
-/* teléfono (9 cifras) e data: ancho fixo, non encollen; o espazo que sobra vai para os campos de texto */
-.campo-telefono,
-.campo-nacimiento {
-  flex: 0 0 auto;
-}
-
-.campo-telefono input {
-  flex: none;
-  width: 11em; /* sitio para 13 caracteres (prefixo internacional: 0034612345678) */
-}
-
-.campo-nacimiento input {
-  flex: none;
-}
-
-.campo-correo {
-  flex: 2;
-}
-
-/* os selectores só ocupan o que miden, o resto queda para a dirección */
-.campo-provincia,
-.campo-municipio {
-  flex: 0 0 auto;
-  padding: 0.5rem 0;
-}
-
-/* ancho fixo para que o select non cambie de tamaño ao elixir outra opción */
-
-/* provincia: cabe o texto máis longo ("Selecciona una provincia") */
-#provincia {
-  width: 14.5em;
-}
-
-/* municipio: cabe o 99% dos nomes; os ~20 máis longos (ex. "San Vicente del Raspeig/Sant Vicent del Raspeig")
-   córtanse só co select pechado, na lista despregada vense enteiros */
-#municipio {
-  width: 16em;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
 }
 
 .campo label {
-  min-width: 80px; /* ancho fixo para aliñar */
   font-weight: 500;
 }
 
-.campo-nacimiento label {
-  white-space: nowrap;
-}
-
 .campo input {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   padding: 0.5rem;
   border: 1px solid #767676; /* contraste mínimo 3:1 para que se vexa o campo */
@@ -527,17 +455,42 @@ form {
 
 /* os select coa mesma altura que os input */
 .campo select {
+  width: 100%;
+  min-width: 0;
   padding: 0.5rem;
+  box-sizing: border-box;
 }
 
 /* botóns de icona (🔍 🧹 ✏️ 🗑️): mesmo ancho, e o alto igual ao ancho (cadrados) */
-.campo button,
+.listaxe-acciones button,
 td button {
   aspect-ratio: 1;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.listaxe-cabecera {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  background-color: var(--heading-bg);
+}
+
+.listaxe-cabecera h3 {
+  flex: 1;
+  margin: 0;
+  background: transparent;
+}
+
+.listaxe-acciones {
+  display: flex;
+  gap: 0.4rem;
 }
 
 /* ---------- validación ---------- */
@@ -560,6 +513,8 @@ input.campo-erro {
 /* ---------- fila de gardar: checkbox enriba do botón, centrados; nota á dereita ---------- */
 .fila-gardar {
   position: relative;
+  display: flex;
+  grid-column: 1 / -1;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
@@ -593,11 +548,27 @@ input.campo-erro {
 }
 
 /* ---------- táboa ---------- */
+.tabla-contenedor {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 60vh;
+  overscroll-behavior-x: contain;
+}
+
+.tabla-contenedor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 table {
   width: 100%;
+  min-width: 70rem;
   margin-top: 1rem;
   font-size: 0.8rem;
   border: 1px solid var(--border);
+  border-collapse: collapse;
 }
 
 th,
@@ -608,6 +579,9 @@ td {
 
 th {
   background-color: var(--accent-soft);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 td:last-child {
@@ -629,9 +603,7 @@ caption {
     padding: 1rem;
   }
 
-  /* apila os campos verticalmente en móbiles */
-  .fila {
-    flex-direction: column;
+  .listaxe-cabecera {
     gap: 0.5rem;
   }
 }

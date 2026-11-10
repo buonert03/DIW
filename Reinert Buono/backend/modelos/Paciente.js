@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-//modelo Paciente
+// Define os campos e a colección MongoDB dos pacientes.
 const PacienteSchema = new mongoose.Schema({
     dnipac: { type: String, required: true },
     nomepac: { type: String, required: true },

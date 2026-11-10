@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-//modelo Doctor
+// Define os campos e a colección MongoDB dos doutores.
 const DoctorSchema = new mongoose.Schema({
     iddoc: { type: String, required: true, unique: true },
     nomedoc: { type: String, required: true },

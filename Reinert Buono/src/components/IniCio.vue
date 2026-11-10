@@ -41,10 +41,6 @@
   </div>
 </template>
 
-<script setup>
-
-</script>
-
 <style scoped>
 .inicio {
   width: min(1120px, 100%);

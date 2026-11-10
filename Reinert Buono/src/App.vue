@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <NavBar />
-    <!-- Aquí se carga el router-view -->
+    <!-- A vista activa determínaa a ruta actual. -->
     <router-view />
     <FooTer />
   </div>
@@ -10,30 +10,23 @@
 <script setup>
   import NavBar from './components/NavBar.vue'
   import FooTer from './components/FooTer.vue'
-  //import { RouterView } from 'vue-router'
 </script>
 
 <style>
-/* 👇 Estilos globales mínimos */
+/* Estilos globais do contedor principal da aplicación. */
 body {
-  margin: 0;               /* quita el margen por defecto del body */
+  margin: 0;
 }
 
 #app {
   max-width: 80vw;
-  margin: 0 auto;          /* centra horizontalmente */
-  padding-top: 1rem;       /* 🔹 margen superior pequeño */
-  padding-bottom: 1rem;    /* 🔹 espacio para el futuro footer */
-  min-height: 100vh;       /* ocupa toda la altura de la pantalla */
+  margin: 0 auto;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* el contenido empieza arriba */
-}
-/* Cuando la pantalla es menor a 768px */
-@media (max-width: 768px) {
-  .container {
-    flex-direction: column;
-  }
+  justify-content: flex-start;
 }
 
 </style>

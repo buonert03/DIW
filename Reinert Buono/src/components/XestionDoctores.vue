@@ -8,10 +8,6 @@
           <label for="id">ID:</label>
           <!-- o ID non se edita: só se mostra cando cargamos un doctor -->
           <input id="id" v-model="novoDoctor.iddoc" type="text" disabled class="centrado" />
-          <!-- type="button" para que non envíe o formulario ao pulsalo -->
-          <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
-            🧹
-          </button>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -75,45 +71,55 @@
         </p>
       </div>
     </form>
-    <h3>📋 Listaxe de doctores</h3>
-    <table v-if="doctores.length > 0">
-      <caption>
-        Listaxe de doctores
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">ID</th>
-          <th scope="col">Codigo</th>
-          <th scope="col">Apelido</th>
-          <th scope="col">Nome</th>
-          <th scope="col">Colexiado</th>
-          <th scope="col">Telefono</th>
-          <th scope="col">Especialidade</th>
-          <th scope="col">Accións</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(d, index) in doctores" :key="index">
-          <!-- números (nº, ID, teléfono) centrados; o texto queda á esquerda -->
-          <td class="centrado">{{ index + 1 }}</td>
-          <td class="centrado">{{ d.iddoc }}</td>
-          <td>{{ d.apeldoc }}</td>
-          <td>{{ d.nomedoc }}</td>
-          <td>{{ d.coledoc ? "Si" : "Non" }}</td>
-          <td class="centrado">{{ d.movildoc }}</td>
-          <td>{{ d.espedoc }}</td>
-          <td class="centrado">
-            <button @click="editarDoctor(index)" title="Editar" :aria-label="`Editar a ${d.nomedoc} ${d.apeldoc}`">
-              ✏️
-            </button>
-            <button @click="eliminarDoctor(index)" title="Eliminar"
-              :aria-label="`Eliminar a ${d.nomedoc} ${d.apeldoc}`">
-              🗑️
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="listaxe-cabecera">
+      <h3>📋 Listaxe de doctores</h3>
+      <div class="listaxe-acciones">
+        <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
+          🧹
+        </button>
+      </div>
+    </div>
+    <div v-if="doctores.length > 0" class="tabla-contenedor" role="region" aria-label="Listaxe de doctores"
+      tabindex="0">
+      <table>
+        <caption>
+          Listaxe de doctores
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Codigo</th>
+            <th scope="col">Apelido</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Colexiado</th>
+            <th scope="col">Telefono</th>
+            <th scope="col">Especialidade</th>
+            <th scope="col">Accións</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(d, index) in doctores" :key="index">
+            <!-- números (nº, ID, teléfono) centrados; o texto queda á esquerda -->
+            <td class="centrado">{{ index + 1 }}</td>
+            <td class="centrado">{{ d.iddoc }}</td>
+            <td>{{ d.apeldoc }}</td>
+            <td>{{ d.nomedoc }}</td>
+            <td>{{ d.coledoc ? "Si" : "Non" }}</td>
+            <td class="centrado">{{ d.movildoc }}</td>
+            <td>{{ d.espedoc }}</td>
+            <td class="centrado">
+              <button @click="editarDoctor(index)" title="Editar" :aria-label="`Editar a ${d.nomedoc} ${d.apeldoc}`">
+                ✏️
+              </button>
+              <button @click="eliminarDoctor(index)" title="Eliminar"
+                :aria-label="`Eliminar a ${d.nomedoc} ${d.apeldoc}`">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p v-else>Non hai doctores cargados.</p>
   </div>
 </template>
@@ -121,7 +127,7 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { obtenerEspecialidades } from "../api/especialidades.js";
-import { useDoctorStore } from "../stores/doctorStore.js";
+import { useDoctorStore } from "../store/doctorStore.js";
 import {
   getDoctores,
   saveDoctor,
@@ -130,13 +136,16 @@ import {
   modifyDoctor,
 } from "../api/doctores.js";
 
+// Registros e opcións que se amosan na táboa e no selector.
 const doctores = ref([]);
 const especialidades = ref([]);
 
+// Estado de edición e erros de validación do formulario.
 const editando = ref(false);
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
 
+// Valores ligados aos controis do formulario.
 const novoDoctor = reactive({
   iddoc: "",
   apeldoc: "",
@@ -147,21 +156,19 @@ const novoDoctor = reactive({
   espedoc: "",
 });
 
+// Carga os doutores e especialidades ao abrir a vista.
 onMounted(async () => {
   doctores.value = await getDoctores();
   especialidades.value = await obtenerEspecialidades();
 });
 
+// Comparte a selección actual mediante o store de Pinia.
 function seleccionarDoctor(doctor) {
   const doctorStore = useDoctorStore();
   doctorStore.seleccionarDoctor(doctor);
 }
 
-//=============== FUNCIONES PRINCIPALES de BBDD ==================
-
-//=============== FUNCIONES AUXILIARES ==================
-
-// pon en maiúscula a primeira letra de cada palabra (ex: "ana maría" → "Ana María")
+// Normaliza o nome e os apelidos antes de gardalos.
 function formatearNome(valor) {
   return valor
     .split(" ")
@@ -172,7 +179,7 @@ function formatearNome(valor) {
     .join(" ");
 }
 
-// ao saír do campo Correo: valida o formato e baleira o campo se non vale
+// Normaliza o correo e marca o campo se o formato non é válido.
 function validarCorreo() {
   const valor = novoDoctor.maildoc.trim().toLowerCase();
   correoInvalido.value =
@@ -185,7 +192,7 @@ function validarCorreo() {
   }
 }
 
-// ao saír do campo Teléfono: valida que sexa un móbil de 9 cifras (6 ou 7 ao principio)
+// Normaliza o teléfono e comproba que teña nove cifras e comece por 6 ou 7.
 function validarTelefono() {
   const valor = novoDoctor.movildoc.trim();
   telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor);
@@ -197,13 +204,13 @@ function validarTelefono() {
   }
 }
 
-// botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
+// Reinicia os campos, os erros de validación e o modo de edición.
 const limpiarFormdoc = () => {
   Object.keys(novoDoctor).forEach((key) => {
     if (typeof novoDoctor[key] === "boolean") {
-      novoDoctor[key] = false; //reinicia los booleanos a false
+      novoDoctor[key] = false;
     } else {
-      novoDoctor[key] = ""; //reinicia el resto
+      novoDoctor[key] = "";
     }
   });
   editando.value = false;
@@ -239,74 +246,25 @@ form {
 }
 
 .fila {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: 1rem;
 }
 
-/* label e input na mesma liña; por defecto cada campo ocupa 1 parte da fila */
 .campo {
-  flex: 1;
-  min-width: 0; /* deixa encoller o campo e o seu input (por defecto un input mide ~20 caracteres) para que a fila non se saia do panel */
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* campos máis anchos */
-.campo-nome,
-.campo-apellido {
-  flex: 3;
-}
-
-/* ID: curto, como o DNI en pacientes */
-.campo-id {
-  flex: 0 0 auto;
-}
-
-.campo-id input {
-  flex: none;
-  width: 9em;
-}
-
-/* teléfono (9 cifras): ancho fixo, non encolle; o espazo que sobra vai para o correo */
-.campo-telefono {
-  flex: 0 0 auto;
-}
-
-.campo-telefono input {
-  flex: none;
-  width: 11em; /* sitio para 13 caracteres (prefixo internacional: 0034612345678) */
-}
-
-.campo-correo {
-  flex: 2;
-}
-
-/* o selector só ocupa o que mide */
-.campo-especialidade {
-  flex: 0 0 auto;
-  padding: 0.5rem 0;
-}
-
-/* ancho fixo = o da especialidade máis longa ("Medicina Preventiva y Salud Pública") */
-#especialidade {
-  width: 19.5em;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
 }
 
 .campo label {
-  min-width: 80px;
-  /* ancho fixo para aliñar */
   font-weight: 500;
 }
 
-/* a label "ID:" só ocupa o que mide (sen o ancho mínimo de 80px das outras, que deixaba un oco);
-   vai despois de .campo label para gañarlle */
-.campo-id label {
-  min-width: auto;
-}
-
-.campo input {
-  flex: 1;
+.campo > input {
+  width: 100%;
   min-width: 0;
   padding: 0.5rem;
   border: 1px solid #767676;
@@ -317,11 +275,14 @@ form {
 
 /* os select coa mesma altura que os input */
 .campo select {
+  width: 100%;
+  min-width: 0;
   padding: 0.5rem;
+  box-sizing: border-box;
 }
 
 /* botóns de icona (🔍 🧹 ✏️ 🗑️): mesmo ancho, e o alto igual ao ancho (cadrados) */
-.campo button,
+.listaxe-acciones button,
 td button {
   aspect-ratio: 1;
   box-sizing: border-box;
@@ -330,24 +291,33 @@ td button {
   justify-content: center;
 }
 
-/* o fieldset dos radio sen o marco por defecto do navegador; só ocupa o que miden Si/Non */
 .campo-colexiado {
-  flex: 0 0 auto;
+  /* A lenda ocupa a primeira fila; as dúas opcións comparten a segunda. */
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  align-content: start;
+  justify-content: start;
+  column-gap: 1rem;
+  row-gap: 0.35rem;
+  min-width: 0;
   border: none;
   margin: 0;
   padding: 0;
 }
 
 .campo-colexiado legend {
-  float: left;
-  /* a legend na mesma liña que os radio */
-  min-width: 80px;
+  grid-column: 1 / -1;
   font-weight: 500;
 }
 
-/* Si / Non non necesitan o ancho fixo das outras labels (vai despois de .campo label para gañarlle) */
-.campo-colexiado label {
-  min-width: auto;
+.campo-colexiado > label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.campo-colexiado input {
+  width: auto;
 }
 
 /* ---------- validación ---------- */
@@ -370,6 +340,8 @@ input.campo-erro {
 /* ---------- fila de gardar: botón centrado, nota á dereita ---------- */
 .fila-gardar {
   position: relative;
+  display: flex;
+  grid-column: 1 / -1;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
@@ -403,11 +375,48 @@ input.campo-erro {
 }
 
 /* ---------- táboa ---------- */
+.listaxe-cabecera {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  background-color: var(--heading-bg);
+}
+
+.listaxe-cabecera h3 {
+  flex: 1;
+  margin: 0;
+  background: transparent;
+}
+
+.listaxe-acciones {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.tabla-contenedor {
+  width: 100%;
+  max-width: 100%;
+  max-height: 60vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.tabla-contenedor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 table {
   width: 100%;
+  min-width: 50rem;
   margin-top: 1rem;
   font-size: 0.8rem;
   border: 1px solid var(--border);
+  border-collapse: collapse;
 }
 
 th,
@@ -418,6 +427,9 @@ td {
 
 th {
   background-color: var(--accent-soft);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 td:last-child {
@@ -439,9 +451,7 @@ caption {
     padding: 1rem;
   }
 
-  /* apila os campos verticalmente en móbiles */
-  .fila {
-    flex-direction: column;
+  .listaxe-cabecera {
     gap: 0.5rem;
   }
 }

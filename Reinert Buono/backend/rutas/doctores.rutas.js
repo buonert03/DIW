@@ -3,7 +3,7 @@ import Doctor from "../modelos/Doctor.js";
 
 const router = express.Router();
 
-//eliminar
+// Elimina o doutor que coincide co identificador recibido na ruta.
 router.delete("/:iddoc", async (req, res) => {
     try {
         const doctor = await Doctor.findOneAndDelete({ iddoc: req.params.dni, });
@@ -20,7 +20,7 @@ router.delete("/:iddoc", async (req, res) => {
 });
 
 
-// Crear 
+// Crea un doutor a partir dos datos recibidos no corpo da petición.
 router.post("/", async (req, res) => {
     try {
         const doctorExistente = await doctor.findeOne( 
@@ -44,17 +44,17 @@ router.post("/", async (req, res) => {
     };
 });
 
-//Obtener todos
+// Devolve todos os doutores rexistrados.
 router.get("/", async (req, res) => {
     try {
-        const doctores = await Doctor.find();  //es el select sql
+        const doctores = await Doctor.find();
         res.json(doctores);
     } catch (error) {
         console.error("ERROR AL OBTENER DOCTORES", error);
         res.status(500).json({ mensaje: "Error al obtener los doctores", error: error.message });    };
 });
 
-//modificar
+// Actualiza o doutor identificado na ruta cos datos do corpo.
 router.put("/:iddoc", async (req, res) => {
     try {
         const doctor = await Doctor.findOneAndUpdate({ iddoc: req.params.dni }, req.body, { new: true });
@@ -69,12 +69,12 @@ router.put("/:iddoc", async (req, res) => {
 });
 
 
-//Obtener doctores por especialidad
+// Devolve os doutores asociados á especialidade indicada na ruta.
 router.get("/:especialidad", async (req, res) => {
     try {
         const doctor = await Doctor.find({
             especialidad: req.params.especialidad,
-        });  //es el select sql
+        });
         if (!doctor) {
             return res.status(404).json({
                mensaje: "No doctor encontrado" ,

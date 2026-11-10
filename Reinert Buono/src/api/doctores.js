@@ -1,38 +1,35 @@
 import axios from "axios"
 
-//en produccion se usa la url del servidor
-//const API_URL = "https://servidor.com/api";
-
+// URL base dos endpoints de doutores.
 const API_URL = "http://localhost:3000/api";
 
-// Guardar doctor
+// Crea un doutor e devolve o rexistro creado pola API.
 export async function saveDoctor(doctor) {
     const res = await axios.post(`${API_URL}/doctores`, doctor);
     return res.data;
 }
 
-// Obtener todos los doctores
+// Devolve todos os doutores ordenados alfabeticamente polo apelido.
 export async function getDoctores() {
     const res = await axios.get(`${API_URL}/doctores`);
     res.data.sort((a, b) => 
         a.apeldoc.localeCompare(b.apeldoc, "es", { sensitivity: "base" })); 
-    // Ordena por apellido de forma ascendente
     return res.data;
 }
 
-// Obtener doctores por especialidad
+// Busca doutores pola especialidade indicada.
 export async function getDoctorByEspecialidad(especialidad) {
     const res = await axios.get(`${API_URL}/doctores/${especialidad}`);
     return res.data;
 } 
 
-// Actualizar doctor
+// Actualiza o doutor identificado polo ID.
 export async function modifyDoctor(id, doctor) {
     const res = await axios.put(`${API_URL}/doctores/${id}`, doctor);
     return res.data;
 }   
 
-// Eliminar doctor
+// Elimina o doutor identificado polo ID.
 export async function deleteDoctor(id) {
     const res = await axios.delete(`${API_URL}/doctores/${id}`);
     return res.data;

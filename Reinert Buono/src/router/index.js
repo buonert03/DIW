@@ -8,6 +8,7 @@ import NotFound from '../components/NotFound.vue'
 import PoliticaPrivacidad from "../components/PoliticaPrivacidad.vue"
 import XestionDoctores from "../components/XestionDoctores.vue"
 
+// As rutas específicas van antes da ruta comodín, que amosa a páxina 404.
 const routes = [
     {path: '/', name: 'IniCio', component: IniCio},
     {path: '/sobrenos', name: 'SobreNos', component: SobreNos},

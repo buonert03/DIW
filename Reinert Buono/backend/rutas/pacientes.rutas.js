@@ -3,7 +3,7 @@ import Paciente from "../modelos/Paciente.js";
 
 const router = express.Router();
 
-//eliminar
+// Elimina o paciente identificado polo DNI recibido na ruta.
 router.delete("/:dni", async (req, res) => {
     try {
         const paciente = await Paciente.findOneAndDelete({ dnipac: req.params.dni });
@@ -20,7 +20,7 @@ router.delete("/:dni", async (req, res) => {
 });
 
 
-// Crear 
+// Crea un paciente a partir dos datos recibidos no corpo da petición.
 router.post("/", async (req, res) => {
     try {
         const pacienteExistente = await Paciente.findOne( 
@@ -44,10 +44,10 @@ router.post("/", async (req, res) => {
     };
 });
 
-//Obtener todos
+// Devolve todos os pacientes rexistrados.
 router.get("/", async (req, res) => {
     try {
-        const pacientes = await Paciente.find();  //es el select sql
+        const pacientes = await Paciente.find();
         res.json(pacientes);
     } catch (error) {
         console.error("ERROR AL OBTENER PACIENTES", error);
@@ -55,7 +55,7 @@ router.get("/", async (req, res) => {
     };
 });
 
-//modificar
+// Actualiza os datos do paciente sen permitir cambios no DNI nin no _id.
 router.put("/:dni", async (req, res) => {
     try {
         // o DNI non se pode modificar: o paciente identifícase polo DNI da URL,
@@ -74,12 +74,12 @@ router.put("/:dni", async (req, res) => {
 });
 
 
-//Obtener un paciente por dni
+// Busca o paciente identificado polo DNI recibido na ruta.
 router.get("/:dni", async (req, res) => {
     try {
         const paciente = await Paciente.findOne({
             dnipac: req.params.dni,
-        });  //es el select sql
+        });
         if (!paciente) {
             return res.status(404).json({
                mensaje: "Paciente no encontrado" ,
