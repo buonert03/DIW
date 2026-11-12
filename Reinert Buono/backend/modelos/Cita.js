@@ -10,7 +10,8 @@ const CitaSchema = new mongoose.Schema(
     fecha: { type: String, required: true },
     hora: { type: String, required: true },
     motivo: { type: String, default: "", maxlength: 500 },
-    estado: { type: String, enum: ["Pendiente"], default: "Pendiente" },
+    diagnostico: { type: String, default: "", maxlength: 500 },
+    estado: { type: String, enum: ["Pendiente", "Realizada", "Cancelada"], default: "Pendiente" },
   },
   {
     collection: "citas",

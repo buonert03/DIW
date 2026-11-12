@@ -23,6 +23,24 @@ export async function getDoctorByEspecialidad(especialidad) {
     return res.data;
 } 
 
+// Busca un doutor polo DNI.
+export async function getDoctorByDni(dni) {
+    try {
+        const res = await axios.get(`${API_URL}/doctores/dni/${encodeURIComponent(dni)}`);
+        return res.data;
+    } catch (error) {
+        if (error.response?.status !== 404) throw error;
+
+        const dniNormalizado = dni.trim().toUpperCase();
+        const doctores = await getDoctores();
+        const doctor = doctores.find(
+            (item) => item.iddoc.trim().toUpperCase() === dniNormalizado
+        );
+        if (doctor) return doctor;
+        throw error;
+    }
+}
+
 // Actualiza o doutor identificado polo ID.
 export async function modifyDoctor(id, doctor) {
     const res = await axios.put(`${API_URL}/doctores/${id}`, doctor);

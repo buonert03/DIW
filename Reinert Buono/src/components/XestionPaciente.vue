@@ -4,7 +4,13 @@
     <form @submit.prevent="guardarPaciente">
       <div class="fila">
         <div class="campo campo-dni">
-          <label for="dni">DNI/NIE:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <div class="dni-cabecera">
+            <label for="dni">DNI/NIE:<span class="obrigatorio" aria-hidden="true">*</span></label>
+            <div class="dni-acciones">
+              <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
+              <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
+            </div>
+          </div>
           <input
             id="dni"
             v-model="novoPaciente.dnipac"
@@ -16,10 +22,20 @@
             :aria-invalid="documentoInvalido"
             aria-describedby="dni-erro"
             :disabled="editando"
-            @focus="documentoInvalido = false"
-            @blur="validarDocumento"/>
+            @focus="limparComprobacionDocumento"
+            @input="limparComprobacionDocumento"
+            @blur="aoPerderFocoDocumento"/>
           <!-- :disabled="editando" → cando cargamos un paciente (✏️ ou 🔍) o DNI vese pero non se pode cambiar; 🧹 desbloquéao -->
           <span v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">DNI/NIE non válido</span>
+          <Transition name="aviso-dni">
+            <span
+              v-if="comprobacionDocumento"
+              :class="['mensaxe-dni', `mensaxe-dni--${comprobacionDocumento}`]"
+              role="status"
+            >
+              {{ textoComprobacionDocumento }}
+            </span>
+          </Transition>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -115,7 +131,15 @@
               novoPaciente.movilpac === '' ||
               !novoPaciente.lopdpac "
         >
-          Gardar
+          {{ editando ? "Gardar cambios" : "Gardar" }}
+        </button>
+        <button
+          v-if="editando"
+          type="button"
+          class="btn-cancelar"
+          @click="limpiarFormpac"
+        >
+          Cancelar edición
         </button>
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
@@ -130,10 +154,6 @@
     </button>
     <div class="listaxe-cabecera">
       <h3>📋 Listaxe de pacientes</h3>
-      <div class="listaxe-acciones">
-        <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
-        <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
-      </div>
     </div>
     <div v-if="pacientes.length > 0" class="tabla-contenedor" role="region" aria-label="Listaxe de pacientes" tabindex="0">
       <table>
@@ -180,7 +200,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
@@ -200,9 +220,11 @@ const router = useRouter();
 
 // Estado de validación y modo de edición del formulario.
 const documentoInvalido = ref(false)
+const comprobacionDocumento = ref("");
 const correoInvalido = ref(false)
 const telefonoIncorrecto = ref(false)
 const editando = ref(false);
+let solicitudeComprobacionDocumento = 0;
 
 // Letras de control utilizadas para validar DNI y NIE.
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
@@ -339,6 +361,48 @@ function validarDocumento() {
   }
 }
 
+const textoComprobacionDocumento = computed(() => {
+  const mensaxes = {
+    existe: "Este DNI ya está registrado.",
+    libre: "Este DNI no está registrado.",
+    erro: "No se pudo comprobar el DNI. Inténtalo de nuevo.",
+  };
+  return mensaxes[comprobacionDocumento.value] || "";
+});
+
+function limparComprobacionDocumento() {
+  solicitudeComprobacionDocumento += 1;
+  comprobacionDocumento.value = "";
+  documentoInvalido.value = false;
+}
+
+// Comproba ao saír do campo se o documento xa pertence a un paciente.
+async function aoPerderFocoDocumento() {
+  validarDocumento();
+  if (documentoInvalido.value || !novoPaciente.dnipac) {
+    return;
+  }
+
+  const dni = novoPaciente.dnipac;
+  const solicitude = ++solicitudeComprobacionDocumento;
+  try {
+    await getPacienteByDni(dni);
+    if (solicitude === solicitudeComprobacionDocumento && novoPaciente.dnipac === dni) {
+      comprobacionDocumento.value = "existe";
+    }
+  } catch (error) {
+    if (solicitude !== solicitudeComprobacionDocumento || novoPaciente.dnipac !== dni) {
+      return;
+    }
+    if (error.response?.status === 404) {
+      comprobacionDocumento.value = "libre";
+    } else {
+      comprobacionDocumento.value = "erro";
+      console.error("Error ao comprobar o DNI:", error);
+    }
+  }
+}
+
 // Normaliza el correo y marca el campo si no tiene un formato válido.
 function validarCorreo() {
   const valor = novoPaciente.mailpac.trim().toLowerCase();
@@ -385,17 +449,19 @@ const limpiarFormpac = () => {
   documentoInvalido.value = false;
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
+  limparComprobacionDocumento();
   municipios.value = [];
 };
 
 // Busca por DNI y carga el resultado en el formulario para editarlo.
 async function buscarPaciente() {
+  validarDocumento();
+  if (documentoInvalido.value || !novoPaciente.dnipac) {
+    return;
+  }
+
   try {
-    const dni = novoPaciente.dnipac.trim();
-    if (!dni) {
-      console.log("introduce un dni!");
-      return;
-    }
+    const dni = novoPaciente.dnipac;
     const paciente = await getPacienteByDni(dni);
     Object.assign(novoPaciente, paciente);
     // El identificador de MongoDB no es un campo editable del formulario.
@@ -457,6 +523,13 @@ form {
   gap: 0.35rem;
 }
 
+.dni-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .campo label {
   font-weight: 500;
 }
@@ -479,7 +552,7 @@ form {
 }
 
 /* botóns de icona (🔍 🧹 ✏️ 🗑️): mesmo ancho, e o alto igual ao ancho (cadrados) */
-.listaxe-acciones button,
+.dni-acciones button,
 td button {
   aspect-ratio: 1;
   box-sizing: border-box;
@@ -505,7 +578,7 @@ td button {
   background: transparent;
 }
 
-.listaxe-acciones {
+.dni-acciones {
   display: flex;
   gap: 0.4rem;
 }
@@ -524,6 +597,31 @@ input.campo-erro {
 .mensaxe-erro {
   font-size: 0.8rem;
   color: #b00020;
+}
+
+.mensaxe-dni {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.mensaxe-dni--existe,
+.mensaxe-dni--erro {
+  color: #b00020;
+}
+
+.mensaxe-dni--libre {
+  color: #237a3b;
+}
+
+.aviso-dni-enter-active,
+.aviso-dni-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.aviso-dni-enter-from,
+.aviso-dni-leave-to {
+  opacity: 0;
+  transform: translateY(-0.3rem);
 }
 
 /* asterisco de campo obrigatorio */
@@ -547,6 +645,15 @@ input.campo-erro {
   color: white;
   border: none;
   padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  padding: 0.4rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-h);
+  background: var(--accent-soft);
   cursor: pointer;
 }
 

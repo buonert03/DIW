@@ -22,6 +22,7 @@
       <li><RouterLink to="/xestion-pacientes">Pacientes</RouterLink></li>
       <li><RouterLink to="/xestion-doctores">Doctores</RouterLink></li>
       <li><RouterLink to="/xestion-citas">Citas</RouterLink></li>
+      <li><RouterLink to="/servicios-medicos">Servicios Médicos</RouterLink></li>
       <li><RouterLink to="/sobrenos">Sobre nós</RouterLink></li>
     </ul>
   </nav>

@@ -20,7 +20,7 @@
           <input id="id-cita" :value="novaCita.idcita || 'Xerarase ao gardar'" type="text" disabled>
         </div>
         <div class="campo">
-          <label for="dni">DNI Paciente</label>
+          <label for="dni">DNI Paciente<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input
             id="dni"
             v-model.trim="novaCita.dnipac"
@@ -32,7 +32,7 @@
           >
         </div>
         <div class="campo">
-          <label for="doctor">Nome Doctor</label>
+          <label for="doctor">Nome Doctor<span class="obrigatorio" aria-hidden="true">*</span></label>
           <select
             id="doctor"
             v-model="novaCita.iddoc"
@@ -50,24 +50,31 @@
           <input id="id-doctor" :value="novaCita.iddoc" type="text" disabled>
         </div>
         <div class="campo">
-          <label for="fecha">Fecha</label>
+          <label for="fecha">Fecha<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="fecha" v-model="novaCita.fecha" type="date" :min="hoxe" required>
         </div>
         <div class="campo">
-          <label for="hora">Hora</label>
+          <label for="hora">Hora<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="hora" v-model="novaCita.hora" type="time" required>
         </div>
         <div class="campo campo-motivo">
           <label for="motivo">Motivo de la cita</label>
-          <textarea id="motivo" v-model.trim="novaCita.motivo" rows="3" maxlength="500"></textarea>
+          <textarea id="motivo" v-model.trim="novaCita.motivo" rows="2" maxlength="500"></textarea>
+        </div>
+        <div class="campo campo-diagnostico">
+          <label for="diagnostico">Diagnóstico</label>
+          <textarea id="diagnostico" v-model.trim="novaCita.diagnostico" rows="2" maxlength="500"></textarea>
         </div>
         <div class="campo">
-          <label for="estado">Estado</label>
+          <label for="estado">Estado<span class="obrigatorio" aria-hidden="true">*</span></label>
           <select id="estado" v-model="novaCita.estado" required>
             <option value="Pendiente">Pendiente</option>
+            <option value="Realizada">Realizada</option>
+            <option value="Cancelada">Cancelada</option>
           </select>
         </div>
       </div>
+      <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obligatorio</p>
 
       <div class="acciones">
         <button type="submit" :disabled="cargando || !doctores.length">
@@ -93,11 +100,11 @@
     </p>
     <div v-if="citas.length" class="listaxe">
       <div class="listaxe-cabecera">
-        <h3>Listaxe de citas de {{ paciente?.dnipac || dniConsultado }}</h3>
+        <h3>Listaxe de citas de <span class="nome-paciente-listaxe">{{ nomePacienteCitas }}</span></h3>
       </div>
       <div class="tabla-contenedor" role="region" aria-label="Citas do paciente" tabindex="0">
         <table>
-          <caption>Citas de {{ paciente?.dnipac || dniConsultado }}</caption>
+          <caption>Citas de {{ nomePacienteCitas }}</caption>
           <thead>
             <tr>
               <th scope="col">ID Cita</th>
@@ -107,6 +114,7 @@
               <th scope="col">Fecha</th>
               <th scope="col">Hora</th>
               <th scope="col">Motivo de la cita</th>
+              <th scope="col">Diagnóstico</th>
               <th scope="col">Estado</th>
               <th scope="col">Acciones</th>
             </tr>
@@ -120,6 +128,7 @@
               <td>{{ cita.fecha }}</td>
               <td>{{ cita.hora }}</td>
               <td>{{ cita.motivo || "—" }}</td>
+              <td>{{ cita.diagnostico || "—" }}</td>
               <td>{{ cita.estado }}</td>
               <td class="celda-acciones">
                 <div class="acciones-cita">
@@ -153,6 +162,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import { getDoctores } from "../api/doctores.js";
+import { getPacienteByDni } from "../api/pacientes.js";
 import {
   actualizarCita,
   borrarCita as borrarCitaApi,
@@ -163,6 +173,14 @@ import { usePacienteStore } from "../store/pacienteStore.js";
 
 const pacienteStore = usePacienteStore();
 const paciente = computed(() => pacienteStore.pacienteSeleccionado);
+const pacienteConsultado = ref(null);
+const nomePacienteCitas = computed(() => {
+  const datosPaciente = paciente.value?.dnipac === dniConsultado.value
+    ? paciente.value
+    : pacienteConsultado.value;
+  return [datosPaciente?.nomepac, datosPaciente?.apelpac].filter(Boolean).join(" ")
+    || dniConsultado.value;
+});
 const doctores = ref([]);
 const citas = ref([]);
 const dniConsultado = ref("");
@@ -180,6 +198,7 @@ const novaCita = reactive({
   fecha: "",
   hora: "",
   motivo: "",
+  diagnostico: "",
   estado: "Pendiente",
 });
 
@@ -201,13 +220,28 @@ function seleccionarDoctor() {
 }
 
 function cambiarDni() {
+  novaCita.dnipac = novaCita.dnipac.replace(/\s+/g, "").toUpperCase();
   citas.value = [];
   dniConsultado.value = "";
+  pacienteConsultado.value = null;
   mensaxe.value = "";
   erro.value = false;
 }
 
 async function cargarCitas(dni) {
+  pacienteConsultado.value = paciente.value?.dnipac === dni
+    ? paciente.value
+    : null;
+  if (!pacienteConsultado.value) {
+    try {
+      pacienteConsultado.value = await getPacienteByDni(dni);
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        throw error;
+      }
+    }
+  }
+
   citas.value = await obterCitas(dni);
   dniConsultado.value = dni;
 }
@@ -261,6 +295,7 @@ function editarCita(cita) {
   novaCita.fecha = cita.fecha;
   novaCita.hora = cita.hora;
   novaCita.motivo = cita.motivo || "";
+  novaCita.diagnostico = cita.diagnostico || "";
   novaCita.estado = cita.estado;
   editandoCita.value = true;
   mensaxe.value = "";
@@ -297,6 +332,7 @@ function limparFormulario() {
   novaCita.fecha = "";
   novaCita.hora = "";
   novaCita.motivo = "";
+  novaCita.diagnostico = "";
   novaCita.estado = "Pendiente";
   editandoCita.value = false;
   if (!paciente.value) {
@@ -320,58 +356,90 @@ function amosarErro(error, mensaxePorDefecto) {
 <style scoped>
 .xestion-citas {
   width: 100%;
-  padding: 2rem;
-  box-sizing: border-box;
+  text-align: left;
   background: white;
+  padding: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
-h2,
-h3 {
+h2 {
+  margin: 0 0 1rem;
+  padding: 0.5rem;
+  font-weight: 600;
+  text-align: center;
+  background-color: var(--heading-bg);
   color: var(--text-h);
 }
 
 .aviso {
-  max-width: 55rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-muted);
+  border-left: 4px solid var(--accent);
+  line-height: 1.5;
 }
 
 .paciente-seleccionado,
 .formulario-cita {
-  margin: 1.5rem 0;
-  padding: 1.5rem;
+  margin: 1rem 0 1.5rem;
+  padding: 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .paciente-seleccionado {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 1.5rem;
+  gap: 0 1rem;
 }
 
 .paciente-seleccionado h3 {
   flex-basis: 100%;
-  margin-top: 0;
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  color: var(--text-h);
+  background: var(--heading-bg);
+}
+
+.paciente-seleccionado p {
+  margin: 0.35rem 0;
 }
 
 .campos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .campo {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  align-items: stretch;
+  gap: 0.35rem;
 }
 
-.campo-motivo {
-  grid-column: 1 / -1;
+.campo label {
+  font-weight: 500;
+}
+
+.obrigatorio,
+.nota-obrigatorio span {
+  color: #b00020;
+}
+
+.obrigatorio {
+  margin-left: 0.15rem;
+}
+
+.nota-obrigatorio {
+  margin: -0.5rem 0 1rem;
+  text-align: right;
+  font-size: 0.8rem;
 }
 
 input,
@@ -379,17 +447,22 @@ select,
 textarea {
   width: 100%;
   min-width: 0;
-  padding: 0.65rem;
+  padding: 0.5rem;
   box-sizing: border-box;
   border: 1px solid #767676;
   border-radius: 6px;
   font: inherit;
 }
 
+.campo textarea {
+  resize: vertical;
+}
+
 .acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 td.celda-acciones {
@@ -402,7 +475,7 @@ td.celda-acciones {
 }
 
 button {
-  padding: 0.6rem 1rem;
+  padding: 0.45rem 1rem;
   border: 0;
   border-radius: 6px;
   color: white;
@@ -432,17 +505,26 @@ button.boton-eliminar {
   color: #b00020;
 }
 
+.listaxe {
+  margin-top: 2rem;
+}
+
 .listaxe-cabecera {
   width: 100%;
-  margin: 1rem 0;
+  margin: 1rem 0 0.75rem;
   padding: 0.5rem 1rem;
   box-sizing: border-box;
   background: var(--heading-bg);
+  border-bottom: 2px solid var(--accent);
 }
 
 .listaxe-cabecera h3 {
   margin: 0;
   text-align: center;
+}
+
+.nome-paciente-listaxe {
+  color: #b00020;
 }
 
 .tabla-contenedor {
@@ -462,13 +544,15 @@ table {
   width: 100%;
   min-width: 64rem;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
 }
 
 th,
 td {
-  padding: 0.7rem;
   border: 1px solid var(--border);
+  padding: 0.7rem;
   text-align: left;
 }
 
@@ -479,6 +563,10 @@ th {
   background: var(--accent-soft);
 }
 
+td:last-child {
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .xestion-citas {
     padding: 1rem;
@@ -487,6 +575,10 @@ th {
   .paciente-seleccionado,
   .formulario-cita {
     padding: 1rem;
+  }
+
+  .tabla-contenedor {
+    max-height: 60vh;
   }
 }
 </style>

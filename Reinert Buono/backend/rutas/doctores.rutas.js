@@ -43,7 +43,9 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ mensaje: "Introduce un DNI ou NIE válido" });
         }
 
-        const doctorExistente = await Doctor.findOne({ iddoc });
+        const doctorExistente = await Doctor.findOne({
+            iddoc: { $regex: new RegExp(`^${iddoc}$`, "i") },
+        });
         if (doctorExistente) {
             return res.status(409).json({
                 mensaje: "Xa existe un doutor con este DNI",
@@ -64,6 +66,28 @@ router.post("/", async (req, res) => {
     }
 });
 
+// Busca un doutor polo DNI normalizado.
+router.get("/dni/:iddoc", async (req, res) => {
+    try {
+        const iddoc = normalizarDni(req.params.iddoc);
+        if (!iddoc) {
+            return res.status(400).json({ mensaje: "Introduce un DNI ou NIE válido" });
+        }
+
+        const doctor = await Doctor.findOne({
+            iddoc: { $regex: new RegExp(`^${iddoc}$`, "i") },
+        });
+        if (!doctor) {
+            return res.status(404).json({ mensaje: "Doctor no encontrado" });
+        }
+        res.json(doctor);
+    } catch (error) {
+        console.error("ERRO AO BUSCAR O DOUTOR", error);
+        res.status(500).json({ mensaje: "Non se puido buscar o doutor" });
+    }
+});
+
+
 // Devolve todos os doutores rexistrados.
 router.get("/", async (req, res) => {
     try {
@@ -83,8 +107,10 @@ router.put("/:iddoc", async (req, res) => {
             return res.status(400).json({ mensaje: "Introduce un DNI ou NIE válido" });
         }
 
-        const duplicado = await Doctor.findOne({ iddoc });
-        if (duplicado && duplicado.iddoc !== iddocAnterior) {
+        const duplicado = await Doctor.findOne({
+            iddoc: { $regex: new RegExp(`^${iddoc}$`, "i") },
+        });
+        if (duplicado && duplicado.iddoc.trim().toUpperCase() !== iddocAnterior) {
             return res.status(409).json({ mensaje: "Xa existe un doutor con este DNI" });
         }
 
@@ -92,7 +118,7 @@ router.put("/:iddoc", async (req, res) => {
         delete datos._id;
         delete datos.__v;
         const doctor = await Doctor.findOneAndUpdate(
-            { iddoc: iddocAnterior },
+            { iddoc: { $regex: new RegExp(`^${iddocAnterior}$`, "i") } },
             datos,
             { new: true, runValidators: true }
         );

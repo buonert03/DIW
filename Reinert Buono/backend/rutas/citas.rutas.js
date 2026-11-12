@@ -5,7 +5,7 @@ import Paciente from "../modelos/Paciente.js";
 
 const router = express.Router();
 
-function datosCitaValidos({ iddoc, fecha, hora, motivo = "", estado = "Pendiente" }, dni) {
+function datosCitaValidos({ iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" }, dni) {
   return Boolean(
     dni &&
       typeof iddoc === "string" &&
@@ -21,7 +21,9 @@ function datosCitaValidos({ iddoc, fecha, hora, motivo = "", estado = "Pendiente
       fecha >= new Date().toISOString().slice(0, 10) &&
       typeof motivo === "string" &&
       motivo.length <= 500 &&
-      estado === "Pendiente"
+      typeof diagnostico === "string" &&
+      diagnostico.length <= 500 &&
+      ["Pendiente", "Realizada", "Cancelada"].includes(estado)
   );
 }
 
@@ -48,7 +50,7 @@ router.get("/:dni", async (req, res) => {
 // Garda a cita asociándoa co DNI dunha ficha de paciente existente.
 router.post("/", async (req, res) => {
   try {
-    const { iddoc, fecha, hora, motivo = "", estado = "Pendiente" } = req.body ?? {};
+    const { iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" } = req.body ?? {};
     const dni = typeof req.body?.dnipac === "string" ? req.body.dnipac.trim().toUpperCase() : "";
     if (!datosCitaValidos(req.body ?? {}, dni)) {
       return res.status(400).json({ mensaje: "Revisa os datos da cita" });
@@ -72,6 +74,7 @@ router.post("/", async (req, res) => {
       fecha,
       hora,
       motivo: motivo.trim(),
+      diagnostico: diagnostico.trim(),
       estado,
     });
     res.status(201).json(cita);
@@ -87,7 +90,7 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ mensaje: "O ID da cita non é válido" });
     }
 
-    const { iddoc, fecha, hora, motivo = "", estado = "Pendiente" } = req.body ?? {};
+    const { iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" } = req.body ?? {};
     const dni = typeof req.body?.dnipac === "string" ? req.body.dnipac.trim().toUpperCase() : "";
     if (!datosCitaValidos(req.body ?? {}, dni)) {
       return res.status(400).json({ mensaje: "Revisa os datos da cita" });
@@ -112,6 +115,7 @@ router.put("/:id", async (req, res) => {
         fecha,
         hora,
         motivo: motivo.trim(),
+        diagnostico: diagnostico.trim(),
         estado,
       },
       { new: true, runValidators: true }
