@@ -19,7 +19,9 @@ export async function getDoctores() {
 
 // Busca doutores pola especialidade indicada.
 export async function getDoctorByEspecialidad(especialidad) {
-    const res = await axios.get(`${API_URL}/doctores/${especialidad}`);
+    const res = await axios.get(`${API_URL}/doctores/${encodeURIComponent(especialidad)}`);
+    res.data.sort((a, b) =>
+        a.apeldoc.localeCompare(b.apeldoc, "es", { sensitivity: "base" }));
     return res.data;
 } 
 

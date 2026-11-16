@@ -64,7 +64,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   color: var(--text);
-  background: url('./assets/imgFondo.png') center center / cover fixed no-repeat;
+  background: var(--bg);
 }
 
 h1,

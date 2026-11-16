@@ -99,6 +99,30 @@
       {{ mensaxe }}
     </p>
     <div v-if="citas.length" class="listaxe">
+      <div class="listaxe-filtros">
+        <select v-model="estadoSeleccionado" aria-label="Estado para filtrar citas">
+          <option value="">Selecciona un estado</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Realizada">Realizada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+        <button
+          type="button"
+          class="secundario"
+          :disabled="!estadoSeleccionado || cargando"
+          @click="filtrarCitasPorEstado"
+        >
+          Filtrar
+        </button>
+        <button
+          type="button"
+          class="secundario"
+          :disabled="(!estadoSeleccionado && !estadoFiltroAplicado) || cargando"
+          @click="restablecerTablaCitas"
+        >
+          Restablecer
+        </button>
+      </div>
       <div class="listaxe-cabecera">
         <h3>Listaxe de citas de <span class="nome-paciente-listaxe">{{ nomePacienteCitas }}</span></h3>
       </div>
@@ -120,7 +144,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="cita in citas" :key="cita.idcita || cita._id">
+            <tr v-for="cita in citasVisibles" :key="cita.idcita || cita._id">
               <td>{{ cita.idcita || cita._id }}</td>
               <td>{{ cita.dnipac }}</td>
               <td>{{ cita.nomedoc }}</td>
@@ -150,6 +174,9 @@
                   </button>
                 </div>
               </td>
+            </tr>
+            <tr v-if="!citasVisibles.length">
+              <td colspan="10">No hay citas en este estado.</td>
             </tr>
           </tbody>
         </table>
@@ -183,6 +210,13 @@ const nomePacienteCitas = computed(() => {
 });
 const doctores = ref([]);
 const citas = ref([]);
+const estadoSeleccionado = ref("");
+const estadoFiltroAplicado = ref("");
+const citasVisibles = computed(() =>
+  estadoFiltroAplicado.value
+    ? citas.value.filter((cita) => cita.estado === estadoFiltroAplicado.value)
+    : citas.value
+);
 const dniConsultado = ref("");
 const cargando = ref(false);
 const mensaxe = ref("");
@@ -222,6 +256,7 @@ function seleccionarDoctor() {
 function cambiarDni() {
   novaCita.dnipac = novaCita.dnipac.replace(/\s+/g, "").toUpperCase();
   citas.value = [];
+  restablecerTablaCitas();
   dniConsultado.value = "";
   pacienteConsultado.value = null;
   mensaxe.value = "";
@@ -229,6 +264,9 @@ function cambiarDni() {
 }
 
 async function cargarCitas(dni) {
+  if (dniConsultado.value && dniConsultado.value !== dni) {
+    restablecerTablaCitas();
+  }
   pacienteConsultado.value = paciente.value?.dnipac === dni
     ? paciente.value
     : null;
@@ -244,6 +282,15 @@ async function cargarCitas(dni) {
 
   citas.value = await obterCitas(dni);
   dniConsultado.value = dni;
+}
+
+function filtrarCitasPorEstado() {
+  estadoFiltroAplicado.value = estadoSeleccionado.value;
+}
+
+function restablecerTablaCitas() {
+  estadoSeleccionado.value = "";
+  estadoFiltroAplicado.value = "";
 }
 
 async function consultarCitas() {
@@ -276,7 +323,7 @@ async function gardarCitaFormulario() {
       ? await actualizarCita(novaCita.idcita, datosCita)
       : await gardarCita(datosCita);
     await cargarCitas(cita.dnipac);
-    limparFormulario();
+    limparCamposCita();
     mensaxe.value = estabaEditando
       ? "Os cambios da cita gardáronse correctamente."
       : "A solicitude de cita gardouse correctamente.";
@@ -314,7 +361,7 @@ async function borrarCita(cita) {
     await borrarCitaApi(identificador);
     await cargarCitas(cita.dnipac);
     if (editandoCita.value && novaCita.idcita === identificador) {
-      limparFormulario();
+      limparCamposCita();
     }
     mensaxe.value = "A cita borrouse correctamente.";
   } catch (error) {
@@ -324,7 +371,7 @@ async function borrarCita(cita) {
   }
 }
 
-function limparFormulario() {
+function limparCamposCita() {
   novaCita.idcita = "";
   novaCita.dnipac = paciente.value?.dnipac || "";
   novaCita.nomedoc = "";
@@ -335,9 +382,16 @@ function limparFormulario() {
   novaCita.diagnostico = "";
   novaCita.estado = "Pendiente";
   editandoCita.value = false;
-  if (!paciente.value) {
-    novaCita.dnipac = "";
-  }
+}
+
+function limparFormulario() {
+  limparCamposCita();
+  novaCita.dnipac = "";
+  citas.value = [];
+  dniConsultado.value = "";
+  pacienteConsultado.value = null;
+  pacienteStore.limpiarPaciente();
+  restablecerTablaCitas();
   mensaxe.value = "";
   erro.value = false;
 }
@@ -507,6 +561,25 @@ button.boton-eliminar {
 
 .listaxe {
   margin-top: 2rem;
+}
+
+.listaxe-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.listaxe-filtros select {
+  min-width: 12rem;
+  max-width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  background: white;
 }
 
 .listaxe-cabecera {

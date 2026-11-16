@@ -92,7 +92,31 @@
           <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
         </div>
         <div class="campo campo-especialidade">
-          <label for="especialidade">Especialidade:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <div class="especialidade-cabecera">
+            <label for="especialidade">Especialidade:<span class="obrigatorio" aria-hidden="true">*</span></label>
+            <div class="especialidade-acciones">
+              <button
+                type="button"
+                class="btn-buscar-especialidade"
+                :disabled="!novoDoctor.espedoc || buscandoEspecialidade"
+                :aria-label="`Buscar doctores de ${novoDoctor.espedoc || 'la especialidad seleccionada'}`"
+                title="Buscar doctores por especialidad"
+                @click="buscarPorEspecialidade"
+              >
+                {{ buscandoEspecialidade ? "…" : "🔍" }}
+              </button>
+              <button
+                type="button"
+                class="btn-restablecer-especialidade"
+                :disabled="!especialidadeBuscada || buscandoEspecialidade"
+                aria-label="Mostrar todos los doctores"
+                title="Restablecer tabla"
+                @click="restablecerTablaDoctores"
+              >
+                ↺
+              </button>
+            </div>
+          </div>
           <select id="especialidade" v-model="novoDoctor.espedoc" required>
             <option value="">Selecciona unha especialidade</option>
             <option v-for="especialidade in especialidades" :key="especialidade.id" :value="especialidade.nm">
@@ -161,6 +185,7 @@
         </tbody>
       </table>
     </div>
+    <p v-else-if="especialidadeBuscada">Non hai doctores de {{ especialidadeBuscada }}.</p>
     <p v-else>Non hai doctores cargados.</p>
   </div>
 </template>
@@ -171,6 +196,7 @@ import { obtenerEspecialidades } from "../api/especialidades.js";
 import { useDoctorStore } from "../store/doctorStore.js";
 import {
   getDoctores,
+  getDoctorByEspecialidad,
   saveDoctor,
   deleteDoctor,
   getDoctorByDni,
@@ -186,6 +212,8 @@ const editando = ref(false);
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
 const dniIncorrecto = ref(false);
+const buscandoEspecialidade = ref(false);
+const especialidadeBuscada = ref("");
 const idDoctorEditado = ref("");
 const comprobacionDni = ref("");
 let solicitudeComprobacionDni = 0;
@@ -205,8 +233,40 @@ const novoDoctor = reactive({
 // Carga os doutores e especialidades ao abrir a vista.
 onMounted(async () => {
   doctores.value = await getDoctores();
+  especialidadeBuscada.value = "";
   especialidades.value = await obtenerEspecialidades();
 });
+
+async function buscarPorEspecialidade() {
+  const especialidad = novoDoctor.espedoc;
+  if (!especialidad || buscandoEspecialidade.value) return;
+
+  buscandoEspecialidade.value = true;
+  try {
+    doctores.value = await getDoctorByEspecialidad(especialidad);
+    especialidadeBuscada.value = especialidad;
+  } catch (error) {
+    console.error("Erro ao buscar doutores por especialidade:", error);
+    window.alert(error.response?.data?.mensaje || "Non se puideron buscar os doutores.");
+  } finally {
+    buscandoEspecialidade.value = false;
+  }
+}
+
+async function restablecerTablaDoctores() {
+  if (!especialidadeBuscada.value || buscandoEspecialidade.value) return;
+
+  buscandoEspecialidade.value = true;
+  try {
+    doctores.value = await getDoctores();
+    especialidadeBuscada.value = "";
+  } catch (error) {
+    console.error("Erro ao restablecer a listaxe de doutores:", error);
+    window.alert(error.response?.data?.mensaje || "Non se puido restablecer a listaxe.");
+  } finally {
+    buscandoEspecialidade.value = false;
+  }
+}
 
 // Comparte a selección actual mediante o store de Pinia.
 function seleccionarDoctor(doctor) {
@@ -376,6 +436,7 @@ async function guardarDoctor() {
       await saveDoctor(datosDoctor);
     }
     doctores.value = await getDoctores();
+    especialidadeBuscada.value = "";
     limpiarFormdoc();
   } catch (error) {
     console.error("Erro ao gardar o doutor:", error);
@@ -405,6 +466,7 @@ async function eliminarDoctor(index) {
   try {
     await deleteDoctor(doctor.iddoc);
     doctores.value = await getDoctores();
+    especialidadeBuscada.value = "";
     if (novoDoctor.iddoc === doctor.iddoc) {
       limpiarFormdoc();
     }
@@ -460,6 +522,40 @@ form {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.especialidade-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.especialidade-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-buscar-especialidade,
+.btn-restablecer-especialidade {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-h);
+  background: var(--accent-soft);
+  cursor: pointer;
+}
+
+.btn-buscar-especialidade:disabled,
+.btn-restablecer-especialidade:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .campo label {

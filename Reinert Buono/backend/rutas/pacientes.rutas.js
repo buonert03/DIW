@@ -23,8 +23,13 @@ router.delete("/:dni", async (req, res) => {
 // Crea un paciente a partir dos datos recibidos no corpo da petición.
 router.post("/", async (req, res) => {
     try {
+        const dnipac = typeof req.body?.dnipac === "string" ? req.body.dnipac.trim().toUpperCase() : "";
+        if (!dnipac) {
+            return res.status(400).json({ mensaje: "El DNI del paciente es obligatorio" });
+        }
+
         const pacienteExistente = await Paciente.findOne( 
-            {dnipac: req.body.dnipac,})
+            {dnipac,})
         if (pacienteExistente){
             return res.status(409).json({
                 mensaje: "Ya existe un paciente con este DNI",
@@ -32,12 +37,15 @@ router.post("/", async (req, res) => {
         }
         
         console.log("Datos Recibidos: ",req.body);
-        const paciente = new Paciente(req.body);
+        const paciente = new Paciente({ ...req.body, dnipac });
         const nuevoPaciente = await paciente.save();
         res.status(201).json(nuevoPaciente);
         
     } catch (error) {
         console.error("ERROR AL CREAR PACIENTE",error);
+        if (error?.code === 11000) {
+            return res.status(409).json({ mensaje: "Ya existe un paciente con este DNI" });
+        }
         res.status(500).json({
             mensaje: "Error al crear el paciente"
         });

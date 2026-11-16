@@ -121,18 +121,28 @@
           </a>
         </label>
 
-        <button
-          type="submit"
-          class="btn-guardar"
-          :disabled="
-            novoPaciente.dnipac === '' || 
-              novoPaciente.nomepac === '' ||
-              novoPaciente.apelpac === '' ||
-              novoPaciente.movilpac === '' ||
-              !novoPaciente.lopdpac "
-        >
-          {{ editando ? "Gardar cambios" : "Gardar" }}
-        </button>
+        <div class="acciones-guardar">
+          <button
+            type="submit"
+            class="btn-guardar"
+            :disabled="
+              novoPaciente.dnipac === '' ||
+                novoPaciente.nomepac === '' ||
+                novoPaciente.apelpac === '' ||
+                novoPaciente.movilpac === '' ||
+                !novoPaciente.lopdpac "
+          >
+            {{ editando ? "Gardar cambios" : "Gardar" }}
+          </button>
+          <button
+            v-if="editando"
+            type="button"
+            class="btn-eliminar"
+            @click="eliminarPacienteEditado"
+          >
+            Eliminar paciente
+          </button>
+        </div>
         <button
           v-if="editando"
           type="button"
@@ -164,28 +174,20 @@
             <th scope="col">DNI/NIE</th>
             <th scope="col">Apelido</th>
             <th scope="col">Nome</th>
-            <th scope="col">Fecha nacemento</th>
             <th scope="col">Telefono</th>
             <th scope="col">Correo</th>
-            <th scope="col">Dirección</th>
-            <th scope="col">Provincia</th>
-            <th scope="col">Municipio</th>
             <th scope="col">Accións</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(p, index) in pacientes" :key="p._id">
-            <!-- números (nº, DNI, data, teléfono) centrados; o texto queda á esquerda -->
+            <!-- números (nº, DNI, teléfono) centrados; o texto queda á esquerda -->
             <td class="centrado">{{ index + 1 }}</td>
             <td class="centrado">{{ p.dnipac }}</td>
             <td>{{ p.apelpac }}</td>
             <td>{{ p.nomepac }}</td>
-            <td class="centrado">{{ p.nacipac }}</td>
             <td class="centrado">{{ p.movilpac }}</td>
             <td>{{ p.mailpac }}</td>
-            <td>{{ p.dirpac }}</td>
-            <td>{{ p.propac }}</td>
-            <td>{{ p.munipac }}</td>
             <td class="centrado">
               <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
               <button @click="abrirCitas(p)" title="Ver citas" :aria-label="`Ver as citas de ${p.nomepac} ${p.apelpac}`">📅</button>
@@ -302,6 +304,7 @@ async function guardarPaciente() {
 // Pide confirmación, elimina el paciente y lo quita de la tabla.
 async function eliminarPaciente(index) {
   const p = pacientes.value[index];
+  if (!p) return;
   if (!confirm(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`)) {
     return;
   }
@@ -309,9 +312,21 @@ async function eliminarPaciente(index) {
   try {
     await deletePaciente(p.dnipac);
     pacientes.value.splice(index, 1);
+    if (editando.value && novoPaciente.dnipac === p.dnipac) {
+      limpiarFormpac();
+    }
     console.log("Paciente eliminado correctamente");
   } catch (error) {
     console.error("Error ao eliminar paciente:", error);
+  }
+}
+
+async function eliminarPacienteEditado() {
+  const index = pacientes.value.findIndex(
+    (paciente) => paciente.dnipac === novoPaciente.dnipac
+  );
+  if (index !== -1) {
+    await eliminarPaciente(index);
   }
 }
 
@@ -645,6 +660,22 @@ input.campo-erro {
   color: white;
   border: none;
   padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.acciones-guardar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-eliminar {
+  padding: 0.4rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  background: var(--danger);
   cursor: pointer;
 }
 

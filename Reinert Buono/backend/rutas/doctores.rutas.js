@@ -142,15 +142,8 @@ router.put("/:iddoc", async (req, res) => {
 // Devolve os doutores asociados á especialidade indicada na ruta.
 router.get("/:especialidad", async (req, res) => {
     try {
-        const doctor = await Doctor.find({
-            especialidad: req.params.especialidad,
-        });
-        if (!doctor) {
-            return res.status(404).json({
-               mensaje: "No doctor encontrado" ,
-            });
-        }
-        res.json(doctor);
+        const doctores = await Doctor.find({ espedoc: req.params.especialidad });
+        res.json(doctores);
     } catch (error) {
         res.status(500).json({ 
             mensaje: "Error al obtener doctores", error });

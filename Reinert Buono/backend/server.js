@@ -6,6 +6,7 @@ import mongoose from "mongoose"
 import pacientesRutas from './rutas/pacientes.rutas.js';
 import doctoresRutas from './rutas/doctores.rutas.js'
 import citasRutas from './rutas/citas.rutas.js';
+import Paciente from './modelos/Paciente.js';
 import { inicializarIdsCita } from './modelos/Cita.js';
 
 // Configura Express, os middlewares e as rutas da API.
@@ -47,7 +48,8 @@ app.get('/api/especialidades', (req, res) => {
 // Conecta coa base de datos antes de aceptar peticións HTTP.
 async function iniciaServer() {
     try {
-        await mongoose.connect(MONGO_URI);
+        await mongoose.connect(MONGO_URI, { dbName: 'bbdd' });
+        await Paciente.init();
         await inicializarIdsCita();
         console.log("Connectado a MongoDB");
         app.listen(PORT, () => {

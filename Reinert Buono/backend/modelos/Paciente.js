@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 // Define os campos e a colección MongoDB dos pacientes.
 const PacienteSchema = new mongoose.Schema({
-    dnipac: { type: String, required: true },
+    dnipac: { type: String, required: true, unique: false, trim: true, uppercase: true, immutable: true },
     nomepac: { type: String, required: true },
     apelpac: { type: String, required: true },
     nacipac: { type: String, required: false },
