@@ -143,6 +143,7 @@
     </form>
     <div class="listaxe-cabecera">
       <h3>📋 Listaxe de doctores</h3>
+      <button type="button" class="btn-imprimir" @click="imprimirDoctores">Imprimir</button>
     </div>
     <div v-if="doctores.length > 0" class="tabla-contenedor" role="region" aria-label="Listaxe de doctores"
       tabindex="0">
@@ -193,6 +194,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
 import { obtenerEspecialidades } from "../api/especialidades.js";
+import { descargarTablaPdf } from "../utils/pdf.js";
 import { useDoctorStore } from "../store/doctorStore.js";
 import {
   getDoctores,
@@ -229,6 +231,28 @@ const novoDoctor = reactive({
   coledoc: false,
   espedoc: "",
 });
+
+function imprimirDoctores() {
+  const especialidad = especialidadeBuscada.value;
+  const sufijo = especialidad
+    ? `-${especialidad.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+    : "";
+
+  descargarTablaPdf({
+    titulo: especialidad ? `Doctores de ${especialidad}` : "Listaxe de doctores",
+    nombreArchivo: `doctores${sufijo}.pdf`,
+    columnas: ["Nº", "DNI", "Apelido", "Nome", "Colexiado", "Telefono", "Especialidade"],
+    filas: doctores.value.map((doctor, index) => [
+      index + 1,
+      doctor.iddoc || "",
+      doctor.apeldoc || "",
+      doctor.nomedoc || "",
+      doctor.coledoc ? "Si" : "Non",
+      doctor.movildoc || "",
+      doctor.espedoc || "",
+    ]),
+  });
+}
 
 // Carga os doutores e especialidades ao abrir a vista.
 onMounted(async () => {
@@ -723,6 +747,15 @@ input.campo-erro {
   flex: 1;
   margin: 0;
   background: transparent;
+}
+
+.btn-imprimir {
+  padding: 0.45rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  background: var(--accent);
+  cursor: pointer;
 }
 
 .dni-acciones {

@@ -164,6 +164,7 @@
     </button>
     <div class="listaxe-cabecera">
       <h3>📋 Listaxe de pacientes</h3>
+      <button type="button" class="btn-imprimir" @click="imprimirPacientes">Imprimir</button>
     </div>
     <div v-if="pacientes.length > 0" class="tabla-contenedor" role="region" aria-label="Listaxe de pacientes" tabindex="0">
       <table>
@@ -205,6 +206,7 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
+import { descargarTablaPdf } from "../utils/pdf.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
 import {
   getPacientes,
@@ -244,6 +246,22 @@ const novoPaciente = reactive({
   munipac: "",
   lopdpac: false
 });
+
+function imprimirPacientes() {
+  descargarTablaPdf({
+    titulo: "Listaxe de pacientes",
+    nombreArchivo: "pacientes.pdf",
+    columnas: ["Nº", "DNI/NIE", "Apelido", "Nome", "Telefono", "Correo"],
+    filas: pacientes.value.map((paciente, index) => [
+      index + 1,
+      paciente.dnipac || "",
+      paciente.apelpac || "",
+      paciente.nomepac || "",
+      paciente.movilpac || "",
+      paciente.mailpac || "",
+    ]),
+  });
+}
 
 // Carga los catálogos y los pacientes cuando se monta la vista.
 onMounted(async () => {
@@ -591,6 +609,15 @@ td button {
   flex: 1;
   margin: 0;
   background: transparent;
+}
+
+.btn-imprimir {
+  padding: 0.45rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  background: var(--accent);
+  cursor: pointer;
 }
 
 .dni-acciones {

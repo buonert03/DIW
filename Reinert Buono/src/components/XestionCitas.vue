@@ -122,6 +122,14 @@
         >
           Restablecer
         </button>
+        <button
+          type="button"
+          class="secundario"
+          :disabled="!pacienteIdentificado || cargando"
+          @click="imprimirCitas"
+        >
+          Imprimir
+        </button>
       </div>
       <div class="listaxe-cabecera">
         <h3>Listaxe de citas de <span class="nome-paciente-listaxe">{{ nomePacienteCitas }}</span></h3>
@@ -190,6 +198,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { getDoctores } from "../api/doctores.js";
 import { getPacienteByDni } from "../api/pacientes.js";
+import { descargarTablaPdf } from "../utils/pdf.js";
 import {
   actualizarCita,
   borrarCita as borrarCitaApi,
@@ -212,12 +221,19 @@ const doctores = ref([]);
 const citas = ref([]);
 const estadoSeleccionado = ref("");
 const estadoFiltroAplicado = ref("");
+const dniConsultado = ref("");
 const citasVisibles = computed(() =>
   estadoFiltroAplicado.value
     ? citas.value.filter((cita) => cita.estado === estadoFiltroAplicado.value)
     : citas.value
 );
-const dniConsultado = ref("");
+const pacienteIdentificado = computed(() =>
+  Boolean(
+    dniConsultado.value &&
+      (paciente.value?.dnipac === dniConsultado.value ||
+        pacienteConsultado.value?.dnipac === dniConsultado.value)
+  )
+);
 const cargando = ref(false);
 const mensaxe = ref("");
 const erro = ref(false);
@@ -235,6 +251,39 @@ const novaCita = reactive({
   diagnostico: "",
   estado: "Pendiente",
 });
+
+function imprimirCitas() {
+  const identificadorPaciente = dniConsultado.value;
+  const estado = estadoFiltroAplicado.value;
+
+  descargarTablaPdf({
+    titulo: `Citas de ${nomePacienteCitas.value}`,
+    subtitulo: estado ? `Estado: ${estado}` : "Todos los estados",
+    nombreArchivo: `citas-${identificadorPaciente}.pdf`,
+    columnas: [
+      "ID Cita",
+      "DNI Paciente",
+      "Nombre Doctor",
+      "ID Doctor",
+      "Fecha",
+      "Hora",
+      "Motivo de la cita",
+      "Diagnóstico",
+      "Estado",
+    ],
+    filas: citasVisibles.value.map((cita) => [
+      cita.idcita || cita._id || "",
+      cita.dnipac || "",
+      cita.nomedoc || "",
+      cita.iddoc || "",
+      cita.fecha || "",
+      cita.hora || "",
+      cita.motivo || "—",
+      cita.diagnostico || "—",
+      cita.estado || "",
+    ]),
+  });
+}
 
 onMounted(async () => {
   try {
