@@ -1,6 +1,7 @@
 <template>
   <div class="xestion-pacientes">
     <h3>👥  Xestión de pacientes</h3>
+    <!-- El formulario comparte los mismos campos para crear y editar una ficha. -->
     <form @submit.prevent="guardarPaciente">
       <div class="fila">
         <div class="campo campo-dni">
@@ -134,6 +135,7 @@
           >
             {{ editando ? "Gardar cambios" : "Gardar" }}
           </button>
+          <!-- Permite saltar a las citas manteniendo el paciente como contexto de navegación. -->
           <button
             v-if="editando"
             type="button"
@@ -162,6 +164,7 @@
     >
       Ver citas deste paciente
     </button>
+    <!-- Tabla de registros con acciones para editar, consultar citas o eliminar. -->
     <div class="listaxe-cabecera">
       <h3>📋 Listaxe de pacientes</h3>
       <button type="button" class="btn-imprimir" @click="imprimirPacientes">Imprimir</button>
@@ -247,6 +250,7 @@ const novoPaciente = reactive({
   lopdpac: false
 });
 
+// Exporta a PDF los datos básicos de todas las fichas cargadas.
 function imprimirPacientes() {
   descargarTablaPdf({
     titulo: "Listaxe de pacientes",
@@ -340,6 +344,7 @@ async function eliminarPaciente(index) {
 }
 
 async function eliminarPacienteEditado() {
+  // Convierte el DNI cargado en el formulario al índice que espera la acción de borrado.
   const index = pacientes.value.findIndex(
     (paciente) => paciente.dnipac === novoPaciente.dnipac
   );
@@ -348,6 +353,7 @@ async function eliminarPacienteEditado() {
   }
 }
 
+// Carga en el formulario un paciente de la tabla y activa el modo edición.
 // Carga en el formulario un paciente de la tabla y activa el modo edición.
 async function editarUsuario(index) {
   const paciente = pacientes.value[index];
@@ -517,6 +523,7 @@ async function buscarPaciente() {
 </script>
 
 <style scoped>
+/* Contenedor principal y estilos de distribución del formulario adaptable. */
 .xestion-pacientes {
   width: 100%;
   text-align: left; /* #app centra todo; aquí o texto vai á esquerda (táboa incluída) */

@@ -1,15 +1,15 @@
 import axios from "axios"
 
-// URL base dos endpoints de doutores.
+// URL base de la API de doctores.
 const API_URL = "http://localhost:3000/api";
 
-// Crea un doutor e devolve o rexistro creado pola API.
+// Crea un doctor y devuelve el registro creado por la API.
 export async function saveDoctor(doctor) {
     const res = await axios.post(`${API_URL}/doctores`, doctor);
     return res.data;
 }
 
-// Devolve todos os doutores ordenados alfabeticamente polo apelido.
+// Obtiene todos los doctores y ordena la respuesta por apellido.
 export async function getDoctores() {
     const res = await axios.get(`${API_URL}/doctores`);
     res.data.sort((a, b) => 
@@ -17,7 +17,7 @@ export async function getDoctores() {
     return res.data;
 }
 
-// Busca doutores pola especialidade indicada.
+// Filtra por especialidad y ordena los resultados por apellido.
 export async function getDoctorByEspecialidad(especialidad) {
     const res = await axios.get(`${API_URL}/doctores/${encodeURIComponent(especialidad)}`);
     res.data.sort((a, b) =>
@@ -25,7 +25,7 @@ export async function getDoctorByEspecialidad(especialidad) {
     return res.data;
 } 
 
-// Busca un doutor polo DNI.
+// Busca un doctor por DNI; como alternativa a un 404, compara localmente el listado.
 export async function getDoctorByDni(dni) {
     try {
         const res = await axios.get(`${API_URL}/doctores/dni/${encodeURIComponent(dni)}`);
@@ -43,13 +43,13 @@ export async function getDoctorByDni(dni) {
     }
 }
 
-// Actualiza o doutor identificado polo ID.
+// Actualiza el doctor identificado por su ID y devuelve el registro guardado.
 export async function modifyDoctor(id, doctor) {
     const res = await axios.put(`${API_URL}/doctores/${id}`, doctor);
     return res.data;
 }   
 
-// Elimina o doutor identificado polo ID.
+// Elimina el doctor identificado por su ID.
 export async function deleteDoctor(id) {
     const res = await axios.delete(`${API_URL}/doctores/${id}`);
     return res.data;

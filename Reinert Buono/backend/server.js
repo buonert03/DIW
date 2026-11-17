@@ -9,7 +9,7 @@ import citasRutas from './rutas/citas.rutas.js';
 import Paciente from './modelos/Paciente.js';
 import { inicializarIdsCita } from './modelos/Cita.js';
 
-// Configura Express, os middlewares e as rutas da API.
+// Configura Express, los middlewares comunes y las rutas de cada recurso.
 const app = express()
 app.use(cors());
 app.use(express.json());
@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3000;
 // URI de conexión a MongoDB, configurada no entorno.
 const MONGO_URI = process.env.MONGO_URI;
 
-// Devolve os datos estáticos de provincias e municipios.
+// Lee y sirve el catálogo estático de provincias y municipios.
 app.get('/api/municipios', (req, res) => {
     console.log('Petición recibida')
     const datos = fs.readFileSync(
@@ -34,7 +34,7 @@ app.get('/api/municipios', (req, res) => {
     res.json(datosJson)
 })
 
-// Devolve os datos estáticos das especialidades.
+// Lee y sirve el catálogo estático de especialidades médicas.
 app.get('/api/especialidades', (req, res) => {
     console.log('Petición recibida')
     const datos = fs.readFileSync(
@@ -45,7 +45,7 @@ app.get('/api/especialidades', (req, res) => {
     res.json(datosJson)
 })
 
-// Conecta coa base de datos antes de aceptar peticións HTTP.
+// Inicializa MongoDB y los datos dependientes antes de empezar a escuchar HTTP.
 async function iniciaServer() {
     try {
         await mongoose.connect(MONGO_URI, { dbName: 'bbdd' });

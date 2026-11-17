@@ -5,6 +5,7 @@ import Paciente from "../modelos/Paciente.js";
 
 const router = express.Router();
 
+// Comprueba los campos obligatorios y sus formatos antes de consultar o guardar una cita.
 function datosCitaValidos({ iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" }, dni) {
   return Boolean(
     dni &&
@@ -27,10 +28,12 @@ function datosCitaValidos({ iddoc, fecha, hora, motivo = "", diagnostico = "", e
   );
 }
 
+// MongoDB almacena el identificador público de cita como número.
 function consultaCitaPorId(id) {
   return { idcita: Number(id) };
 }
 
+// Rechaza IDs que no sean enteros positivos representables de forma segura.
 function idCitaValido(id) {
   return /^[1-9]\d*$/.test(id) && Number.isSafeInteger(Number(id));
 }
@@ -47,7 +50,7 @@ router.get("/:dni", async (req, res) => {
   }
 });
 
-// Garda a cita asociándoa co DNI dunha ficha de paciente existente.
+// Crea una cita tras comprobar que existen el paciente y el doctor referenciados.
 router.post("/", async (req, res) => {
   try {
     const { iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" } = req.body ?? {};
@@ -84,6 +87,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Valida y reemplaza los datos editables de una cita existente.
 router.put("/:id", async (req, res) => {
   try {
     if (!idCitaValido(req.params.id)) {
@@ -130,6 +134,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// Elimina una cita por su ID público y devuelve 404 si no existe.
 router.delete("/:id", async (req, res) => {
   try {
     if (!idCitaValido(req.params.id)) {

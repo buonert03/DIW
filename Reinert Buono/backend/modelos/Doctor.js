@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// Define os campos e a colección MongoDB dos doutores.
+// Define los campos, validaciones y colección MongoDB de los doctores.
 const DoctorSchema = new mongoose.Schema({
     iddoc: { type: String, required: true, unique: true },
     nomedoc: { type: String, required: true },
@@ -15,4 +15,5 @@ const DoctorSchema = new mongoose.Schema({
     }
 );
 
+// Exporta el modelo reutilizando la colección "doctores".
 export default mongoose.model("Doctor", DoctorSchema);

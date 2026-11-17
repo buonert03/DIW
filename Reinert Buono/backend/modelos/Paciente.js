@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// Define os campos e a colección MongoDB dos pacientes.
+// Define los campos del paciente; el DNI se normaliza al guardar y no puede modificarse.
 const PacienteSchema = new mongoose.Schema({
     dnipac: { type: String, required: true, unique: false, trim: true, uppercase: true, immutable: true },
     nomepac: { type: String, required: true },
@@ -18,4 +18,5 @@ const PacienteSchema = new mongoose.Schema({
     }
 );
 
+// Exporta el modelo asociado a la colección "pacientes".
 export default mongoose.model("Paciente", PacienteSchema);

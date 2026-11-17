@@ -1,10 +1,12 @@
 <template>
   <main class="xestion-citas">
     <h2>Solicitude de citas</h2>
+    <!-- Avisa de que esta pantalla de prácticas no autentica a quien consulta el DNI. -->
     <p class="aviso">
       Modo de prácticas: o DNI úsase para asociar e consultar as citas, sen verificar a identidade.
     </p>
 
+    <!-- Muestra los datos del paciente cuando la navegación llega desde su ficha. -->
     <section v-if="paciente" class="paciente-seleccionado">
       <h3>Paciente seleccionado</h3>
       <p><strong>Nome:</strong> {{ paciente.nomepac }} {{ paciente.apelpac }}</p>
@@ -13,6 +15,7 @@
       <p v-if="paciente.mailpac"><strong>Correo:</strong> {{ paciente.mailpac }}</p>
     </section>
 
+    <!-- El formulario sirve tanto para crear una cita como para editar la seleccionada. -->
     <form class="formulario-cita" @submit.prevent="gardarCitaFormulario">
       <div class="campos">
         <div class="campo">
@@ -98,6 +101,7 @@
     <p v-if="mensaxe" :class="['mensaxe', { erro }]" :role="erro ? 'alert' : 'status'">
       {{ mensaxe }}
     </p>
+    <!-- La lista aparece al consultar o guardar citas y permite filtrar y administrar registros. -->
     <div v-if="citas.length" class="listaxe">
       <div class="listaxe-filtros">
         <select v-model="estadoSeleccionado" aria-label="Estado para filtrar citas">
@@ -131,6 +135,7 @@
           Imprimir
         </button>
       </div>
+      <!-- La tabla usa citasVisibles para aplicar el estado filtrado sin perder los datos originales. -->
       <div class="listaxe-cabecera">
         <h3>Listaxe de citas de <span class="nome-paciente-listaxe">{{ nomePacienteCitas }}</span></h3>
       </div>
@@ -208,8 +213,10 @@ import {
 import { usePacienteStore } from "../store/pacienteStore.js";
 
 const pacienteStore = usePacienteStore();
+// Sincroniza el contexto de la vista con la selección compartida desde pacientes.
 const paciente = computed(() => pacienteStore.pacienteSeleccionado);
 const pacienteConsultado = ref(null);
+// El nombre se obtiene de la ficha seleccionada o de la consultada por DNI.
 const nomePacienteCitas = computed(() => {
   const datosPaciente = paciente.value?.dnipac === dniConsultado.value
     ? paciente.value
@@ -219,6 +226,7 @@ const nomePacienteCitas = computed(() => {
 });
 const doctores = ref([]);
 const citas = ref([]);
+// Se conserva por separado el valor del selector y el filtro aplicado a la tabla.
 const estadoSeleccionado = ref("");
 const estadoFiltroAplicado = ref("");
 const dniConsultado = ref("");
@@ -234,6 +242,7 @@ const pacienteIdentificado = computed(() =>
         pacienteConsultado.value?.dnipac === dniConsultado.value)
   )
 );
+// Estado de carga, mensajes y modo de edición usados por el formulario y sus botones.
 const cargando = ref(false);
 const mensaxe = ref("");
 const erro = ref(false);
@@ -252,6 +261,7 @@ const novaCita = reactive({
   estado: "Pendiente",
 });
 
+// Exporta a PDF las citas visibles, conservando el filtro activo en el subtítulo.
 function imprimirCitas() {
   const identificadorPaciente = dniConsultado.value;
   const estado = estadoFiltroAplicado.value;
@@ -285,6 +295,7 @@ function imprimirCitas() {
   });
 }
 
+// Al abrir la vista carga doctores y, si hay paciente seleccionado, sus citas.
 onMounted(async () => {
   try {
     doctores.value = await getDoctores();
@@ -297,11 +308,13 @@ onMounted(async () => {
   }
 });
 
+// Guarda también el nombre legible del doctor al seleccionar su identificador.
 function seleccionarDoctor() {
   const doctor = doctores.value.find((item) => item.iddoc === novaCita.iddoc);
   novaCita.nomedoc = doctor ? `${doctor.nomedoc} ${doctor.apeldoc}`.trim() : "";
 }
 
+// Normaliza el DNI escrito y descarta resultados anteriores asociados a otro documento.
 function cambiarDni() {
   novaCita.dnipac = novaCita.dnipac.replace(/\s+/g, "").toUpperCase();
   citas.value = [];
@@ -312,6 +325,7 @@ function cambiarDni() {
   erro.value = false;
 }
 
+// Carga ficha y citas para un DNI; reutiliza la ficha del store cuando coincide.
 async function cargarCitas(dni) {
   if (dniConsultado.value && dniConsultado.value !== dni) {
     restablecerTablaCitas();
@@ -333,15 +347,18 @@ async function cargarCitas(dni) {
   dniConsultado.value = dni;
 }
 
+// Aplica el estado elegido sin modificar la colección completa de citas.
 function filtrarCitasPorEstado() {
   estadoFiltroAplicado.value = estadoSeleccionado.value;
 }
 
+// Quita la selección y el filtro aplicado a la tabla.
 function restablecerTablaCitas() {
   estadoSeleccionado.value = "";
   estadoFiltroAplicado.value = "";
 }
 
+// Consulta citas del DNI del formulario y centraliza los errores mostrados al usuario.
 async function consultarCitas() {
   const dni = novaCita.dnipac.trim().toUpperCase();
   if (!dni) return;
@@ -358,6 +375,7 @@ async function consultarCitas() {
   }
 }
 
+// Crea o actualiza la cita según el modo actual y recarga la lista tras guardar.
 async function gardarCitaFormulario() {
   cargando.value = true;
   mensaxe.value = "";
@@ -383,6 +401,7 @@ async function gardarCitaFormulario() {
   }
 }
 
+// Copia una fila al formulario para editarla y desplaza la página hasta el formulario.
 function editarCita(cita) {
   novaCita.idcita = cita.idcita || cita._id;
   novaCita.dnipac = cita.dnipac;
@@ -399,6 +418,7 @@ function editarCita(cita) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// Pide confirmación, elimina la cita y actualiza la lista del paciente.
 async function borrarCita(cita) {
   const identificador = cita.idcita || cita._id;
   if (!window.confirm("Seguro que queres borrar esta cita?")) return;
@@ -420,6 +440,7 @@ async function borrarCita(cita) {
   }
 }
 
+// Restablece los campos de la cita sin borrar el paciente contextual.
 function limparCamposCita() {
   novaCita.idcita = "";
   novaCita.dnipac = paciente.value?.dnipac || "";
@@ -433,6 +454,7 @@ function limparCamposCita() {
   editandoCita.value = false;
 }
 
+// Limpia toda la vista y también la selección global del paciente.
 function limparFormulario() {
   limparCamposCita();
   novaCita.dnipac = "";
@@ -445,6 +467,7 @@ function limparFormulario() {
   erro.value = false;
 }
 
+// Convierte errores HTTP y de red en mensajes adecuados para mostrar en la interfaz.
 function amosarErro(error, mensaxePorDefecto) {
   erro.value = true;
   const resposta = error.response?.data;
@@ -457,6 +480,7 @@ function amosarErro(error, mensaxePorDefecto) {
 </script>
 
 <style scoped>
+/* Contenedor principal, formulario y ficha del paciente. */
 .xestion-citas {
   width: 100%;
   text-align: left;
@@ -577,6 +601,7 @@ td.celda-acciones {
   gap: 0.4rem;
 }
 
+/* Controles compartidos, mensajes de estado y acciones principales. */
 button {
   padding: 0.45rem 1rem;
   border: 0;
@@ -612,6 +637,7 @@ button.boton-eliminar {
   margin-top: 2rem;
 }
 
+/* Filtros, encabezado y tabla con desplazamiento para pantallas estrechas. */
 .listaxe-filtros {
   display: flex;
   flex-wrap: wrap;

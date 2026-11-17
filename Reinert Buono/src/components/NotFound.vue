@@ -1,4 +1,5 @@
 <template>
+  <!-- Vista de reserva para cualquier URL que no coincida con una ruta conocida. -->
   <h2>A paxina que buscas non se encontra.</h2>
   <p>Por favor, comproba a URL ou volve á páxina de inicio.</p>
   <div style="text-align: center; margin-top: 20px;">

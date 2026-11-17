@@ -1,4 +1,5 @@
 <template>
+  <!-- Página estática con la misión, los valores y el equipo del centro. -->
   <div class="sobre-nos">
     <section class="intro">
       <h1>Sobre Nosotros</h1>

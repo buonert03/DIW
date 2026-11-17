@@ -1,4 +1,5 @@
 <template>
+  <!-- Texto informativo mostrado al explicar la aceptación del tratamiento de datos. -->
   <div class="politica-privacidad">
     <h4>Política de privacidad y confidencialidad</h4>
     <h5>Protección de datos y confidencialidad</h5>

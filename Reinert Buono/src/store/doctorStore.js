@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-// Mantén dispoñible a selección de doctor entre compoñentes.
+// Comparte la selección actual del doctor entre las vistas mediante Pinia.
 export const useDoctorStore = defineStore('doctor', {
   state: () => ({
     doctores: [],
@@ -10,13 +10,13 @@ export const useDoctorStore = defineStore('doctor', {
   }),
 
   actions: {
-    // Copia ao estado os datos identificativos do doutor seleccionado.
+    // Copia al estado global los datos que identifican al doctor seleccionado.
     seleccionarDoctor(doctor) {
       this.iddoc = doctor.iddoc;
       this.nomedoc = doctor.nomedoc;
       this.apeldoc = doctor.apeldoc;
     },
-    // Borra os datos identificativos da selección actual.
+    // Limpia la selección cuando deja de haber un doctor activo.
     limpiarDoctor() {
       this.iddoc = null;
       this.nomedoc = null;

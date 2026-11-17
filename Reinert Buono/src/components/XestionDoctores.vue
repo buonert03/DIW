@@ -1,6 +1,7 @@
 <template>
   <div class="xestion-doctores">
     <h3>🩺 Xestión de doctores</h3>
+    <!-- El formulario cambia entre alta y edición según el doctor cargado. -->
     <form @submit.prevent="guardarDoctor">
       <!-- fila 1: DNI, apelido, nome e colexiado -->
       <div class="fila">
@@ -141,6 +142,7 @@
         </p>
       </div>
     </form>
+    <!-- La tabla refleja todos los doctores o el resultado de filtrar por especialidad. -->
     <div class="listaxe-cabecera">
       <h3>📋 Listaxe de doctores</h3>
       <button type="button" class="btn-imprimir" @click="imprimirDoctores">Imprimir</button>
@@ -232,6 +234,7 @@ const novoDoctor = reactive({
   espedoc: "",
 });
 
+// Exporta el listado actual; el nombre del archivo incluye la especialidad si hay filtro.
 function imprimirDoctores() {
   const especialidad = especialidadeBuscada.value;
   const sufijo = especialidad
@@ -254,13 +257,14 @@ function imprimirDoctores() {
   });
 }
 
-// Carga os doutores e especialidades ao abrir a vista.
+// Carga los doctores y el catálogo de especialidades al abrir la vista.
 onMounted(async () => {
   doctores.value = await getDoctores();
   especialidadeBuscada.value = "";
   especialidades.value = await obtenerEspecialidades();
 });
 
+// Consulta la API con la especialidad seleccionada y conserva ese filtro visible.
 async function buscarPorEspecialidade() {
   const especialidad = novoDoctor.espedoc;
   if (!especialidad || buscandoEspecialidade.value) return;
@@ -277,6 +281,7 @@ async function buscarPorEspecialidade() {
   }
 }
 
+// Vuelve a cargar todos los doctores y elimina el filtro de especialidad aplicado.
 async function restablecerTablaDoctores() {
   if (!especialidadeBuscada.value || buscandoEspecialidade.value) return;
 
@@ -292,12 +297,13 @@ async function restablecerTablaDoctores() {
   }
 }
 
-// Comparte a selección actual mediante o store de Pinia.
+// Comparte la selección actual mediante el store de Pinia.
 function seleccionarDoctor(doctor) {
   const doctorStore = useDoctorStore();
   doctorStore.seleccionarDoctor(doctor);
 }
 
+// Valida DNI y NIE usando el formato y el cálculo de la letra de control.
 function dniDoctorValido(valor) {
   const dni = valor.trim().toUpperCase();
   if (/^\d{8}[A-Z]$/.test(dni)) {
@@ -310,6 +316,7 @@ function dniDoctorValido(valor) {
   return false;
 }
 
+// Normaliza el documento del formulario y marca los valores que no pasan la validación.
 function validarDniDoctor() {
   const dni = novoDoctor.iddoc.trim().toUpperCase();
   dniIncorrecto.value = dni !== "" && !dniDoctorValido(dni);
@@ -320,6 +327,7 @@ function validarDniDoctor() {
   }
 }
 
+// Traduce el estado interno de la consulta de DNI al texto de la interfaz.
 const textoComprobacionDni = computed(() => {
   const mensaxes = {
     existe: "Este DNI ya está registrado.",
@@ -329,12 +337,14 @@ const textoComprobacionDni = computed(() => {
   return mensaxes[comprobacionDni.value] || "";
 });
 
+// Invalida consultas pendientes para que una respuesta antigua no cambie el mensaje actual.
 function limparComprobacionDni() {
   solicitudeComprobacionDni += 1;
   comprobacionDni.value = "";
   dniIncorrecto.value = false;
 }
 
+// Al salir del campo comprueba en el servidor si el DNI ya está registrado.
 async function aoPerderFocoDni() {
   validarDniDoctor();
   if (dniIncorrecto.value || !novoDoctor.iddoc) return;
@@ -357,6 +367,7 @@ async function aoPerderFocoDni() {
   }
 }
 
+// Busca el doctor por DNI y carga sus datos para edición si existe.
 async function buscarDoctor() {
   validarDniDoctor();
   if (dniIncorrecto.value || !novoDoctor.iddoc) return;
@@ -383,7 +394,7 @@ async function buscarDoctor() {
   }
 }
 
-// Normaliza o nome e os apelidos antes de gardalos.
+// Normaliza el uso de mayúsculas en cada palabra del nombre o apellido.
 function formatearNome(valor) {
   return valor
     .split(" ")
@@ -394,7 +405,7 @@ function formatearNome(valor) {
     .join(" ");
 }
 
-// Normaliza o correo e marca o campo se o formato non é válido.
+// Normaliza el correo y marca el campo si no tiene un formato válido.
 function validarCorreo() {
   const valor = novoDoctor.maildoc.trim().toLowerCase();
   correoInvalido.value =
@@ -407,7 +418,7 @@ function validarCorreo() {
   }
 }
 
-// Normaliza o teléfono e comproba que teña nove cifras e comece por 6 ou 7.
+// Comprueba que el teléfono tenga nueve cifras y empiece por 6 o 7.
 function validarTelefono() {
   const valor = novoDoctor.movildoc.trim();
   telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor);
@@ -419,7 +430,7 @@ function validarTelefono() {
   }
 }
 
-// Reinicia os campos, os erros de validación e o modo de edición.
+// Reinicia los campos, los errores de validación y el modo de edición.
 const limpiarFormdoc = () => {
   Object.keys(novoDoctor).forEach((key) => {
     if (typeof novoDoctor[key] === "boolean") {
@@ -436,6 +447,7 @@ const limpiarFormdoc = () => {
   limparComprobacionDni();
 };
 
+// Valida datos y crea o actualiza el doctor; luego recarga el listado.
 async function guardarDoctor() {
   validarDniDoctor();
   validarTelefono();
@@ -468,6 +480,7 @@ async function guardarDoctor() {
   }
 }
 
+// Copia un elemento de la tabla al formulario y activa el modo de edición.
 function editarDoctor(index) {
   Object.assign(novoDoctor, doctores.value[index]);
   delete novoDoctor._id;
@@ -481,6 +494,7 @@ function editarDoctor(index) {
   seleccionarDoctor(doctores.value[index]);
 }
 
+// Solicita confirmación antes de eliminar y actualiza la lista tras la respuesta.
 async function eliminarDoctor(index) {
   const doctor = doctores.value[index];
   if (!window.confirm(`Seguro que queres eliminar a ${doctor.nomedoc} ${doctor.apeldoc}?`)) {
@@ -502,6 +516,7 @@ async function eliminarDoctor(index) {
 </script>
 
 <style scoped>
+/* Contenedor y reglas de distribución del formulario adaptable. */
 .xestion-doctores {
   width: 100%;
   text-align: left; /* #app centra todo; aquí o texto vai á esquerda (táboa incluída) */

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { randomUUID } from "node:crypto";
 
+// Esquema de las citas; timestamps añade createdAt y updatedAt a cada registro.
 const CitaSchema = new mongoose.Schema(
   {
     idcita: { type: Number, required: true, unique: true },
@@ -19,6 +20,7 @@ const CitaSchema = new mongoose.Schema(
   }
 );
 
+// Contador persistente usado para asignar IDs numéricos únicos aunque se reinicie el servidor.
 const SecuenciaSchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
@@ -30,6 +32,7 @@ const SecuenciaSchema = new mongoose.Schema(
 const Cita = mongoose.models.Cita || mongoose.model("Cita", CitaSchema);
 const Secuencia = mongoose.models.Secuencia || mongoose.model("Secuencia", SecuenciaSchema);
 
+// Migra los identificadores antiguos que no sean enteros positivos y sincroniza el contador.
 export async function inicializarIdsCita() {
   const documentos = await Cita.collection
     .find({}, { projection: { _id: 1, idcita: 1, createdAt: 1 } })
@@ -40,6 +43,7 @@ export async function inicializarIdsCita() {
   );
 
   if (necesitanMigracion) {
+    // Los valores temporales evitan colisiones con el índice único durante la renumeración.
     for (const documento of documentos) {
       await Cita.collection.updateOne(
         { _id: documento._id },
@@ -65,6 +69,7 @@ export async function inicializarIdsCita() {
   );
 }
 
+// Incrementa atómicamente la secuencia en MongoDB y devuelve el nuevo ID.
 export async function seguinteIdCita() {
   const secuencia = await Secuencia.findOneAndUpdate(
     { _id: "citas" },

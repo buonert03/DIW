@@ -1,4 +1,5 @@
 <template>
+  <!-- Página informativa que agrupa las condiciones de uso y el alcance del sitio. -->
   <main class="aviso-legal">
     <header class="cabecera">
       <span class="etiqueta">SANIDAD TEIS</span>
@@ -9,6 +10,7 @@
     </header>
 
     <div class="contenido">
+      <!-- Cada sección presenta un aspecto distinto del uso y la disponibilidad del sitio. -->
       <section>
         <h2>Finalidad del sitio</h2>
         <p>

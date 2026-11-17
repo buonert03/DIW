@@ -5,6 +5,7 @@ import Doctor from "../modelos/Doctor.js";
 const router = express.Router();
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";
 
+// Normaliza y valida DNI/NIE comprobando que su letra corresponda al número.
 function normalizarDni(valor) {
     if (typeof valor !== "string") return "";
     const dni = valor.trim().toUpperCase();
@@ -18,7 +19,7 @@ function normalizarDni(valor) {
     return "";
 }
 
-// Elimina o doutor identificado polo DNI recibido na ruta.
+// Elimina el doctor identificado por su DNI.
 router.delete("/:iddoc", async (req, res) => {
     try {
         const doctor = await Doctor.findOneAndDelete({ iddoc: req.params.iddoc });
@@ -35,7 +36,7 @@ router.delete("/:iddoc", async (req, res) => {
 });
 
 
-// Crea un doutor a partir dos datos recibidos no corpo da petición.
+// Valida el DNI, evita duplicados y crea el doctor con los datos recibidos.
 router.post("/", async (req, res) => {
     try {
         const iddoc = normalizarDni(req.body?.iddoc);
@@ -66,7 +67,7 @@ router.post("/", async (req, res) => {
     }
 });
 
-// Busca un doutor polo DNI normalizado.
+// Busca un doctor usando el DNI normalizado y una comparación sin distinguir mayúsculas.
 router.get("/dni/:iddoc", async (req, res) => {
     try {
         const iddoc = normalizarDni(req.params.iddoc);
@@ -88,7 +89,7 @@ router.get("/dni/:iddoc", async (req, res) => {
 });
 
 
-// Devolve todos os doutores rexistrados.
+// Devuelve todos los doctores registrados.
 router.get("/", async (req, res) => {
     try {
         const doctores = await Doctor.find();
@@ -98,7 +99,7 @@ router.get("/", async (req, res) => {
         res.status(500).json({ mensaje: "Error al obtener los doctores", error: error.message });    };
 });
 
-// Actualiza o doutor identificado na ruta cos datos do corpo.
+// Actualiza un doctor; si cambia su DNI, también actualiza las citas relacionadas.
 router.put("/:iddoc", async (req, res) => {
     try {
         const iddocAnterior = req.params.iddoc.trim().toUpperCase();
@@ -139,7 +140,7 @@ router.put("/:iddoc", async (req, res) => {
 });
 
 
-// Devolve os doutores asociados á especialidade indicada na ruta.
+// Devuelve los doctores que pertenecen a la especialidad indicada.
 router.get("/:especialidad", async (req, res) => {
     try {
         const doctores = await Doctor.find({ espedoc: req.params.especialidad });

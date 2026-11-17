@@ -1,4 +1,5 @@
 <template>
+  <!-- Pie compartido con acceso al aviso legal, datos del proyecto y enlace externo. -->
   <footer class="footer-content footer">
     <div class="link-aviso">
       <router-link to="/avisolegal">Aviso Legal</router-link>
@@ -13,9 +14,12 @@
   </footer>
 </template>
 
-<script setup></script>
+<script setup>
+// No requiere estado: el año se obtiene directamente al renderizar la plantilla.
+</script>
 
 <style scoped>
+/* Mantiene el pie alineado con la paleta y permite que sus enlaces se adapten a móvil. */
 .footer {
   background: var(--accent); /* verde da paleta: o texto branco ten contraste 5:1 */
   color: white;

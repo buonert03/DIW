@@ -1,4 +1,5 @@
 <template>
+  <!-- Catálogo estático de servicios: cada elemento se representa como una tarjeta. -->
   <main class="servicios-medicos">
     <header class="cabecera">
       <h1>Servicios Médicos</h1>
@@ -15,6 +16,7 @@
 </template>
 
 <script setup>
+// Datos de presentación que alimentan el v-for de servicios, sin llamadas a la API.
 const servicios = [
   {
     nombre: "Medicina general",

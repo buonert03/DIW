@@ -1,4 +1,4 @@
-// Crea a aplicación Vue, rexístra os plugins globais e móntaa no documento.
+// Punto de entrada: crea Vue, instala los plugins globales y monta la aplicación en el HTML.
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import './style.css'
@@ -7,5 +7,5 @@ import router from './router'
 
 const pinia = createPinia()
 
-// O router e Pinia deben estar rexistrados antes de renderizar os compoñentes.
+// Registra navegación y estado global antes de renderizar el componente raíz.
 createApp(App).use(router).use(pinia).mount('#app')

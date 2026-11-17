@@ -1,4 +1,5 @@
 <template>
+  <!-- Navegación común: las rutas llevan a las distintas secciones de la aplicación. -->
   <nav class="navbar">
     <div class="logo">
       <!-- logo: corazón vermello cunha cruz branca dentro (decorativo: o nome xa vai ao lado) -->
@@ -15,8 +16,10 @@
       Sanidad Teis
     </div>
 
-    <button class="hamburger" @click="isOpen = !isOpen">☰</button> 
+    <!-- En pantallas pequeñas, este botón alterna el estado visible del menú. -->
+    <button class="hamburger" @click="isOpen = !isOpen">☰</button>
 
+    <!-- La clase open se activa únicamente mientras el menú móvil está desplegado. -->
     <ul :class="['menu', { open: isOpen }]">
       <li><RouterLink to="/">Inicio</RouterLink></li>
       <li><RouterLink to="/servicios-medicos">Servicios Médicos</RouterLink></li>
@@ -31,7 +34,7 @@
 <script setup>
 import { ref } from "vue"
 
-// Controla se o menú móbil está despregado.
+// Estado reactivo que controla si el menú móvil está desplegado.
 const isOpen = ref(false)
 </script>
 

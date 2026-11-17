@@ -1,3 +1,4 @@
+// Genera y descarga un PDF apaisado con título, columnas y filas suministrados.
 export async function descargarTablaPdf({
   titulo,
   subtitulo,
@@ -6,6 +7,7 @@ export async function descargarTablaPdf({
   filas,
 }) {
   try {
+    // Carga las librerías solo cuando se solicita exportar, reduciendo el paquete inicial.
     const [{ jsPDF }, { default: autoTable }] = await Promise.all([
       import("jspdf"),
       import("jspdf-autotable"),
@@ -19,6 +21,7 @@ export async function descargarTablaPdf({
       documento.text(subtitulo, 14, 23);
     }
 
+    // autoTable distribuye el contenido en una tabla y añade páginas si hace falta.
     autoTable(documento, {
       startY: subtitulo ? 29 : 23,
       head: [columnas],

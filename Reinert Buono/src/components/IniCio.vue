@@ -1,4 +1,5 @@
 <template>
+  <!-- Portada: presenta el vídeo de consulta centrado en el área principal. -->
   <main class="inicio">
     <video
       class="consulta-medica"

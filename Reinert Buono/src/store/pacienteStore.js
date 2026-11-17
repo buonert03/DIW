@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-// Mantén dispoñible a selección de paciente entre compoñentes.
+// Comparte la selección actual del paciente entre las vistas mediante Pinia.
 export const usePacienteStore = defineStore('paciente', {
   state: () => ({
     pacientes: [],
@@ -11,14 +11,14 @@ export const usePacienteStore = defineStore('paciente', {
   }),
 
   actions: {
-    // Copia ao estado os datos de identificación do rexistro seleccionado.
+    // Copia los datos identificativos y una instantánea del registro seleccionado.
     seleccionarPaciente(paciente) {
       this.dnipac = paciente.dnipac;
       this.nomepac = paciente.nomepac;
       this.apelpac = paciente.apelpac;
       this.pacienteSeleccionado = { ...paciente };
     },
-    // Borra os datos de identificación da selección actual.
+    // Limpia la selección cuando deja de haber un paciente activo.
     limpiarPaciente() {
       this.dnipac = null;
       this.nomepac = null;

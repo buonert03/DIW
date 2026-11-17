@@ -3,7 +3,7 @@ import Paciente from "../modelos/Paciente.js";
 
 const router = express.Router();
 
-// Elimina o paciente identificado polo DNI recibido na ruta.
+// Elimina el paciente identificado por el DNI de la ruta.
 router.delete("/:dni", async (req, res) => {
     try {
         const paciente = await Paciente.findOneAndDelete({ dnipac: req.params.dni });
@@ -20,7 +20,7 @@ router.delete("/:dni", async (req, res) => {
 });
 
 
-// Crea un paciente a partir dos datos recibidos no corpo da petición.
+// Normaliza el DNI, detecta duplicados y crea un paciente con los datos recibidos.
 router.post("/", async (req, res) => {
     try {
         const dnipac = typeof req.body?.dnipac === "string" ? req.body.dnipac.trim().toUpperCase() : "";
@@ -52,7 +52,7 @@ router.post("/", async (req, res) => {
     };
 });
 
-// Devolve todos os pacientes rexistrados.
+// Devuelve todos los pacientes registrados.
 router.get("/", async (req, res) => {
     try {
         const pacientes = await Paciente.find();
@@ -63,7 +63,7 @@ router.get("/", async (req, res) => {
     };
 });
 
-// Actualiza os datos do paciente sen permitir cambios no DNI nin no _id.
+// Actualiza los datos sin permitir que el cuerpo de la petición cambie los identificadores.
 router.put("/:dni", async (req, res) => {
     try {
         // o DNI non se pode modificar: o paciente identifícase polo DNI da URL,
@@ -82,7 +82,7 @@ router.put("/:dni", async (req, res) => {
 });
 
 
-// Busca o paciente identificado polo DNI recibido na ruta.
+// Busca un paciente por DNI y devuelve 404 cuando no existe.
 router.get("/:dni", async (req, res) => {
     try {
         const paciente = await Paciente.findOne({

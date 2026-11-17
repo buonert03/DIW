@@ -10,7 +10,7 @@ import XestionDoctores from "../components/XestionDoctores.vue"
 import XestionCitas from "../components/XestionCitas.vue"
 import ServiciosMedicos from "../components/ServiciosMedicos.vue"
 
-// As rutas específicas van antes da ruta comodín, que amosa a páxina 404.
+// Asocia cada URL con su vista; la ruta comodín debe quedar al final para mostrar el 404.
 const routes = [
     {path: '/', name: 'IniCio', component: IniCio},
     {path: '/sobrenos', name: 'SobreNos', component: SobreNos},
@@ -23,6 +23,7 @@ const routes = [
     {path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound}
 ];
 
+// Usa el historial del navegador para navegar sin recargar la aplicación.
 const router = createRouter({
     history: createWebHistory(),
     routes
