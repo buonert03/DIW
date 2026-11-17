@@ -1,48 +1,44 @@
 import express from "express";
-import Cita, { seguinteIdCita } from "../modelos/Cita.js";
+import mongoose from "mongoose";
+import Cita from "../modelos/Cita.js";
 import Doctor from "../modelos/Doctor.js";
 import Paciente from "../modelos/Paciente.js";
 
 const router = express.Router();
+const ESTADOS_CITA = ["pendente", "realizada", "cancelada"];
 
-// Comprueba los campos obligatorios y sus formatos antes de consultar o guardar una cita.
-function datosCitaValidos({ iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" }, dni) {
+function datosCitaValidos({ doctorId, fecha, hora, motivo, estado = "pendente" }, pacienteDNI) {
+  const fechaValida =
+    typeof fecha === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(fecha) &&
+    !Number.isNaN(new Date(`${fecha}T00:00:00Z`).getTime()) &&
+    new Date(`${fecha}T00:00:00Z`).toISOString().slice(0, 10) === fecha &&
+    fecha >= new Date().toISOString().slice(0, 10);
+
   return Boolean(
-    dni &&
-      typeof iddoc === "string" &&
-      iddoc.trim() &&
-      typeof fecha === "string" &&
-      /^\d{4}-\d{2}-\d{2}$/.test(fecha) &&
+    pacienteDNI &&
+      mongoose.isValidObjectId(doctorId) &&
+      fechaValida &&
       typeof hora === "string" &&
       /^\d{2}:\d{2}$/.test(hora) &&
       Number(hora.slice(0, 2)) <= 23 &&
       Number(hora.slice(3, 5)) <= 59 &&
-      !Number.isNaN(new Date(`${fecha}T00:00:00Z`).getTime()) &&
-      new Date(`${fecha}T00:00:00Z`).toISOString().slice(0, 10) === fecha &&
-      fecha >= new Date().toISOString().slice(0, 10) &&
       typeof motivo === "string" &&
-      motivo.length <= 500 &&
-      typeof diagnostico === "string" &&
-      diagnostico.length <= 500 &&
-      ["Pendiente", "Realizada", "Cancelada"].includes(estado)
+      motivo.trim() &&
+      ESTADOS_CITA.includes(estado)
   );
 }
 
-// MongoDB almacena el identificador público de cita como número.
-function consultaCitaPorId(id) {
-  return { idcita: Number(id) };
-}
-
-// Rechaza IDs que no sean enteros positivos representables de forma segura.
 function idCitaValido(id) {
-  return /^[1-9]\d*$/.test(id) && Number.isSafeInteger(Number(id));
+  return mongoose.isValidObjectId(id);
 }
 
-// Demo para prácticas: el DNI identifica las citas, pero no verifica la identidad.
 router.get("/:dni", async (req, res) => {
   try {
-    const dni = req.params.dni.trim().toUpperCase();
-    const citas = await Cita.find({ dnipac: dni }).sort({ fecha: 1, hora: 1 });
+    const pacienteDNI = req.params.dni.trim().toUpperCase();
+    const citas = await Cita.find({ pacienteDNI })
+      .populate("doctorId", "nomedoc apeldoc")
+      .sort({ fecha: 1, hora: 1 });
     res.json(citas);
   } catch (error) {
     console.error("Erro ao obter as citas:", error);
@@ -50,36 +46,52 @@ router.get("/:dni", async (req, res) => {
   }
 });
 
-// Crea una cita tras comprobar que existen el paciente y el doctor referenciados.
 router.post("/", async (req, res) => {
   try {
-    const { iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" } = req.body ?? {};
-    const dni = typeof req.body?.dnipac === "string" ? req.body.dnipac.trim().toUpperCase() : "";
-    if (!datosCitaValidos(req.body ?? {}, dni)) {
+    const {
+      doctorId,
+      fecha,
+      hora,
+      motivo,
+      observacions = "",
+      estado = "pendente",
+    } = req.body ?? {};
+    const pacienteDNI =
+      typeof req.body?.pacienteDNI === "string"
+        ? req.body.pacienteDNI.trim().toUpperCase()
+        : "";
+
+    if (
+      !datosCitaValidos(
+        { doctorId, fecha, hora, motivo, estado },
+        pacienteDNI
+      ) ||
+      typeof observacions !== "string"
+    ) {
       return res.status(400).json({ mensaje: "Revisa os datos da cita" });
     }
 
-    const pacienteExiste = await Paciente.exists({ dnipac: dni });
+    const [pacienteExiste, doctor] = await Promise.all([
+      Paciente.exists({ dnipac: pacienteDNI }),
+      Doctor.findById(doctorId),
+    ]);
     if (!pacienteExiste) {
       return res.status(404).json({ mensaje: "Non existe un paciente con ese DNI" });
     }
-
-    const doctor = await Doctor.findOne({ iddoc: iddoc.trim() });
     if (!doctor) {
       return res.status(404).json({ mensaje: "Non existe un doutor con ese ID" });
     }
 
     const cita = await Cita.create({
-      idcita: await seguinteIdCita(),
-      dnipac: dni,
-      iddoc: doctor.iddoc,
-      nomedoc: `${doctor.nomedoc} ${doctor.apeldoc}`.trim(),
+      pacienteDNI,
+      doctorId: doctor._id,
       fecha,
       hora,
       motivo: motivo.trim(),
-      diagnostico: diagnostico.trim(),
+      observacions: observacions.trim(),
       estado,
     });
+    await cita.populate("doctorId", "nomedoc apeldoc");
     res.status(201).json(cita);
   } catch (error) {
     console.error("Erro ao gardar a cita:", error);
@@ -87,43 +99,60 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Valida y reemplaza los datos editables de una cita existente.
 router.put("/:id", async (req, res) => {
   try {
     if (!idCitaValido(req.params.id)) {
       return res.status(400).json({ mensaje: "O ID da cita non é válido" });
     }
 
-    const { iddoc, fecha, hora, motivo = "", diagnostico = "", estado = "Pendiente" } = req.body ?? {};
-    const dni = typeof req.body?.dnipac === "string" ? req.body.dnipac.trim().toUpperCase() : "";
-    if (!datosCitaValidos(req.body ?? {}, dni)) {
+    const {
+      doctorId,
+      fecha,
+      hora,
+      motivo,
+      observacions = "",
+      estado = "pendente",
+    } = req.body ?? {};
+    const pacienteDNI =
+      typeof req.body?.pacienteDNI === "string"
+        ? req.body.pacienteDNI.trim().toUpperCase()
+        : "";
+
+    if (
+      !datosCitaValidos(
+        { doctorId, fecha, hora, motivo, estado },
+        pacienteDNI
+      ) ||
+      typeof observacions !== "string"
+    ) {
       return res.status(400).json({ mensaje: "Revisa os datos da cita" });
     }
 
-    const pacienteExiste = await Paciente.exists({ dnipac: dni });
+    const [pacienteExiste, doctor] = await Promise.all([
+      Paciente.exists({ dnipac: pacienteDNI }),
+      Doctor.findById(doctorId),
+    ]);
     if (!pacienteExiste) {
       return res.status(404).json({ mensaje: "Non existe un paciente con ese DNI" });
     }
-
-    const doctor = await Doctor.findOne({ iddoc: iddoc.trim() });
     if (!doctor) {
       return res.status(404).json({ mensaje: "Non existe un doutor con ese ID" });
     }
 
-    const cita = await Cita.findOneAndUpdate(
-      consultaCitaPorId(req.params.id),
+    const cita = await Cita.findByIdAndUpdate(
+      req.params.id,
       {
-        dnipac: dni,
-        iddoc: doctor.iddoc,
-        nomedoc: `${doctor.nomedoc} ${doctor.apeldoc}`.trim(),
+        pacienteDNI,
+        doctorId: doctor._id,
         fecha,
         hora,
         motivo: motivo.trim(),
-        diagnostico: diagnostico.trim(),
+        observacions: observacions.trim(),
         estado,
       },
       { new: true, runValidators: true }
-    );
+    ).populate("doctorId", "nomedoc apeldoc");
+
     if (!cita) {
       return res.status(404).json({ mensaje: "Non existe esa cita" });
     }
@@ -134,14 +163,13 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Elimina una cita por su ID público y devuelve 404 si no existe.
 router.delete("/:id", async (req, res) => {
   try {
     if (!idCitaValido(req.params.id)) {
       return res.status(400).json({ mensaje: "O ID da cita non é válido" });
     }
 
-    const cita = await Cita.findOneAndDelete(consultaCitaPorId(req.params.id));
+    const cita = await Cita.findByIdAndDelete(req.params.id);
     if (!cita) {
       return res.status(404).json({ mensaje: "Non existe esa cita" });
     }

@@ -20,13 +20,13 @@
       <div class="campos">
         <div class="campo">
           <label for="id-cita">ID Cita</label>
-          <input id="id-cita" :value="novaCita.idcita || 'Xerarase ao gardar'" type="text" disabled>
+          <input id="id-cita" :value="novaCita._id || 'Xerarase ao gardar'" type="text" disabled>
         </div>
         <div class="campo">
           <label for="dni">DNI Paciente<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input
             id="dni"
-            v-model.trim="novaCita.dnipac"
+            v-model.trim="novaCita.pacienteDNI"
             type="text"
             autocomplete="off"
             required
@@ -38,19 +38,18 @@
           <label for="doctor">Nome Doctor<span class="obrigatorio" aria-hidden="true">*</span></label>
           <select
             id="doctor"
-            v-model="novaCita.iddoc"
+            v-model="novaCita.doctorId"
             required
-            @change="seleccionarDoctor"
           >
             <option value="">Selecciona un doutor</option>
-            <option v-for="doctor in doctores" :key="doctor.iddoc" :value="doctor.iddoc">
+            <option v-for="doctor in doctores" :key="doctor._id" :value="doctor._id">
               {{ doctor.nomedoc }} {{ doctor.apeldoc }}
             </option>
           </select>
         </div>
         <div class="campo">
           <label for="id-doctor">ID Doctor</label>
-          <input id="id-doctor" :value="novaCita.iddoc" type="text" disabled>
+          <input id="id-doctor" :value="novaCita.doctorId" type="text" disabled>
         </div>
         <div class="campo">
           <label for="fecha">Fecha<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -61,19 +60,19 @@
           <input id="hora" v-model="novaCita.hora" type="time" required>
         </div>
         <div class="campo campo-motivo">
-          <label for="motivo">Motivo de la cita</label>
-          <textarea id="motivo" v-model.trim="novaCita.motivo" rows="2" maxlength="500"></textarea>
+          <label for="motivo">Motivo de la cita<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <textarea id="motivo" v-model.trim="novaCita.motivo" rows="2" required></textarea>
         </div>
         <div class="campo campo-diagnostico">
-          <label for="diagnostico">Diagnóstico</label>
-          <textarea id="diagnostico" v-model.trim="novaCita.diagnostico" rows="2" maxlength="500"></textarea>
+          <label for="observacions">Observaciones</label>
+          <textarea id="observacions" v-model.trim="novaCita.observacions" rows="2"></textarea>
         </div>
         <div class="campo">
           <label for="estado">Estado<span class="obrigatorio" aria-hidden="true">*</span></label>
           <select id="estado" v-model="novaCita.estado" required>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Realizada">Realizada</option>
-            <option value="Cancelada">Cancelada</option>
+            <option value="pendente">Pendiente</option>
+            <option value="realizada">Realizada</option>
+            <option value="cancelada">Cancelada</option>
           </select>
         </div>
       </div>
@@ -89,8 +88,11 @@
         <button
           v-if="!paciente"
           type="button"
-          class="secundario"
-          :disabled="cargando || !novaCita.dnipac"
+          :class="[
+            'secundario',
+            { 'boton-seleccionado': editandoCita && novaCita._id === cita._id },
+          ]"
+          :disabled="cargando || !novaCita.pacienteDNI"
           @click="consultarCitas"
         >
           Ver citas
@@ -106,9 +108,9 @@
       <div class="listaxe-filtros">
         <select v-model="estadoSeleccionado" aria-label="Estado para filtrar citas">
           <option value="">Selecciona un estado</option>
-          <option value="Pendiente">Pendiente</option>
-          <option value="Realizada">Realizada</option>
-          <option value="Cancelada">Cancelada</option>
+          <option value="pendente">Pendiente</option>
+          <option value="realizada">Realizada</option>
+          <option value="cancelada">Cancelada</option>
         </select>
         <button
           type="button"
@@ -151,31 +153,32 @@
               <th scope="col">Fecha</th>
               <th scope="col">Hora</th>
               <th scope="col">Motivo de la cita</th>
-              <th scope="col">Diagnóstico</th>
+              <th scope="col">Observaciones</th>
               <th scope="col">Estado</th>
               <th scope="col">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="cita in citasVisibles" :key="cita.idcita || cita._id">
-              <td>{{ cita.idcita || cita._id }}</td>
-              <td>{{ cita.dnipac }}</td>
-              <td>{{ cita.nomedoc }}</td>
-              <td>{{ cita.iddoc }}</td>
+            <tr v-for="cita in citasVisibles" :key="cita._id">
+              <td>{{ cita._id }}</td>
+              <td>{{ cita.pacienteDNI }}</td>
+              <td>{{ nomeDoctor(cita) }}</td>
+              <td>{{ cita.doctorId?._id || cita.doctorId }}</td>
               <td>{{ cita.fecha }}</td>
               <td>{{ cita.hora }}</td>
               <td>{{ cita.motivo || "—" }}</td>
-              <td>{{ cita.diagnostico || "—" }}</td>
-              <td>{{ cita.estado }}</td>
+              <td>{{ cita.observacions || "—" }}</td>
+              <td>{{ textoEstado(cita.estado) }}</td>
               <td class="celda-acciones">
                 <div class="acciones-cita">
                   <button
                     type="button"
                     class="secundario"
-                    :disabled="cargando"
+                    :disabled="cargando || (editandoCita && novaCita._id === cita._id)"
+                    :title="editandoCita && novaCita._id === cita._id ? 'Cita seleccionada para editar' : 'Editar cita'"
                     @click="editarCita(cita)"
                   >
-                    Editar
+                    {{ editandoCita && novaCita._id === cita._id ? "✓" : "Editar" }}
                   </button>
                   <button
                     type="button"
@@ -250,16 +253,30 @@ const editandoCita = ref(false);
 const hoxe = computed(() => new Date().toISOString().slice(0, 10));
 
 const novaCita = reactive({
-  idcita: "",
-  dnipac: "",
-  nomedoc: "",
-  iddoc: "",
+  _id: "",
+  pacienteDNI: "",
+  doctorId: "",
   fecha: "",
   hora: "",
   motivo: "",
-  diagnostico: "",
-  estado: "Pendiente",
+  observacions: "",
+  estado: "pendente",
 });
+
+function nomeDoctor(cita) {
+  const doctor = cita.doctorId && typeof cita.doctorId === "object"
+    ? cita.doctorId
+    : doctores.value.find((item) => item._id === cita.doctorId);
+  return [doctor?.nomedoc, doctor?.apeldoc].filter(Boolean).join(" ") || "—";
+}
+
+function textoEstado(estado) {
+  return {
+    pendente: "Pendiente",
+    realizada: "Realizada",
+    cancelada: "Cancelada",
+  }[estado] || estado;
+}
 
 // Exporta a PDF las citas visibles, conservando el filtro activo en el subtítulo.
 function imprimirCitas() {
@@ -278,19 +295,19 @@ function imprimirCitas() {
       "Fecha",
       "Hora",
       "Motivo de la cita",
-      "Diagnóstico",
+      "Observaciones",
       "Estado",
     ],
     filas: citasVisibles.value.map((cita) => [
-      cita.idcita || cita._id || "",
-      cita.dnipac || "",
-      cita.nomedoc || "",
-      cita.iddoc || "",
+      cita._id || "",
+      cita.pacienteDNI || "",
+      nomeDoctor(cita),
+      cita.doctorId?._id || cita.doctorId || "",
       cita.fecha || "",
       cita.hora || "",
       cita.motivo || "—",
-      cita.diagnostico || "—",
-      cita.estado || "",
+      cita.observacions || "—",
+      textoEstado(cita.estado),
     ]),
   });
 }
@@ -300,7 +317,7 @@ onMounted(async () => {
   try {
     doctores.value = await getDoctores();
     if (paciente.value?.dnipac) {
-      novaCita.dnipac = paciente.value.dnipac;
+      novaCita.pacienteDNI = paciente.value.dnipac;
       await cargarCitas(paciente.value.dnipac);
     }
   } catch (error) {
@@ -308,15 +325,9 @@ onMounted(async () => {
   }
 });
 
-// Guarda también el nombre legible del doctor al seleccionar su identificador.
-function seleccionarDoctor() {
-  const doctor = doctores.value.find((item) => item.iddoc === novaCita.iddoc);
-  novaCita.nomedoc = doctor ? `${doctor.nomedoc} ${doctor.apeldoc}`.trim() : "";
-}
-
 // Normaliza el DNI escrito y descarta resultados anteriores asociados a otro documento.
 function cambiarDni() {
-  novaCita.dnipac = novaCita.dnipac.replace(/\s+/g, "").toUpperCase();
+  novaCita.pacienteDNI = novaCita.pacienteDNI.replace(/\s+/g, "").toUpperCase();
   citas.value = [];
   restablecerTablaCitas();
   dniConsultado.value = "";
@@ -360,7 +371,7 @@ function restablecerTablaCitas() {
 
 // Consulta citas del DNI del formulario y centraliza los errores mostrados al usuario.
 async function consultarCitas() {
-  const dni = novaCita.dnipac.trim().toUpperCase();
+  const dni = novaCita.pacienteDNI.trim().toUpperCase();
   if (!dni) return;
 
   cargando.value = true;
@@ -384,12 +395,12 @@ async function gardarCitaFormulario() {
   try {
     const datosCita = {
       ...novaCita,
-      dnipac: novaCita.dnipac.trim().toUpperCase(),
+      pacienteDNI: novaCita.pacienteDNI.trim().toUpperCase(),
     };
     const cita = editandoCita.value
-      ? await actualizarCita(novaCita.idcita, datosCita)
+      ? await actualizarCita(novaCita._id, datosCita)
       : await gardarCita(datosCita);
-    await cargarCitas(cita.dnipac);
+    await cargarCitas(cita.pacienteDNI);
     limparCamposCita();
     mensaxe.value = estabaEditando
       ? "Os cambios da cita gardáronse correctamente."
@@ -403,14 +414,13 @@ async function gardarCitaFormulario() {
 
 // Copia una fila al formulario para editarla y desplaza la página hasta el formulario.
 function editarCita(cita) {
-  novaCita.idcita = cita.idcita || cita._id;
-  novaCita.dnipac = cita.dnipac;
-  novaCita.nomedoc = cita.nomedoc;
-  novaCita.iddoc = cita.iddoc;
+  novaCita._id = cita._id;
+  novaCita.pacienteDNI = cita.pacienteDNI;
+  novaCita.doctorId = cita.doctorId?._id || cita.doctorId;
   novaCita.fecha = cita.fecha;
   novaCita.hora = cita.hora;
   novaCita.motivo = cita.motivo || "";
-  novaCita.diagnostico = cita.diagnostico || "";
+  novaCita.observacions = cita.observacions || "";
   novaCita.estado = cita.estado;
   editandoCita.value = true;
   mensaxe.value = "";
@@ -420,7 +430,7 @@ function editarCita(cita) {
 
 // Pide confirmación, elimina la cita y actualiza la lista del paciente.
 async function borrarCita(cita) {
-  const identificador = cita.idcita || cita._id;
+  const identificador = cita._id;
   if (!window.confirm("Seguro que queres borrar esta cita?")) return;
 
   cargando.value = true;
@@ -428,8 +438,8 @@ async function borrarCita(cita) {
   erro.value = false;
   try {
     await borrarCitaApi(identificador);
-    await cargarCitas(cita.dnipac);
-    if (editandoCita.value && novaCita.idcita === identificador) {
+    await cargarCitas(cita.pacienteDNI);
+    if (editandoCita.value && novaCita._id === identificador) {
       limparCamposCita();
     }
     mensaxe.value = "A cita borrouse correctamente.";
@@ -442,22 +452,21 @@ async function borrarCita(cita) {
 
 // Restablece los campos de la cita sin borrar el paciente contextual.
 function limparCamposCita() {
-  novaCita.idcita = "";
-  novaCita.dnipac = paciente.value?.dnipac || "";
-  novaCita.nomedoc = "";
-  novaCita.iddoc = "";
+  novaCita._id = "";
+  novaCita.pacienteDNI = paciente.value?.dnipac || "";
+  novaCita.doctorId = "";
   novaCita.fecha = "";
   novaCita.hora = "";
   novaCita.motivo = "";
-  novaCita.diagnostico = "";
-  novaCita.estado = "Pendiente";
+  novaCita.observacions = "";
+  novaCita.estado = "pendente";
   editandoCita.value = false;
 }
 
 // Limpia toda la vista y también la selección global del paciente.
 function limparFormulario() {
   limparCamposCita();
-  novaCita.dnipac = "";
+  novaCita.pacienteDNI = "";
   citas.value = [];
   dniConsultado.value = "";
   pacienteConsultado.value = null;
@@ -614,6 +623,15 @@ button {
 button:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+button.secundario.boton-seleccionado {
+  min-width: 4.5rem;
+  color: #198754;
+  font-size: 1.1em;
+  font-weight: 700;
+  opacity: 1;
+  cursor: default;
 }
 
 button.secundario {

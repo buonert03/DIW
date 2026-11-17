@@ -6,8 +6,7 @@ import mongoose from "mongoose"
 import pacientesRutas from './rutas/pacientes.rutas.js';
 import doctoresRutas from './rutas/doctores.rutas.js'
 import citasRutas from './rutas/citas.rutas.js';
-import Paciente from './modelos/Paciente.js';
-import { inicializarIdsCita } from './modelos/Cita.js';
+import { migrarCitas } from './migraciones/migrarCitas.js';
 
 // Configura Express, los middlewares comunes y las rutas de cada recurso.
 const app = express()
@@ -48,15 +47,22 @@ app.get('/api/especialidades', (req, res) => {
 // Inicializa MongoDB y los datos dependientes antes de empezar a escuchar HTTP.
 async function iniciaServer() {
     try {
+        if (!MONGO_URI) {
+            throw new Error("Falta configurar MONGO_URI no ficheiro .env");
+        }
         await mongoose.connect(MONGO_URI, { dbName: 'bbdd' });
-        await Paciente.init();
-        await inicializarIdsCita();
+        const citasMigradas = await migrarCitas();
+        if (citasMigradas) {
+            console.log(`Migráronse ${citasMigradas} citas ao modelo actual`);
+        }
         console.log("Connectado a MongoDB");
         app.listen(PORT, () => {
             console.log(`Servidor funcionando en http://localhost:${PORT}`);
         });
     } catch (error) {
         console.error("Error de connexion", error);
+        await mongoose.disconnect();
+        process.exitCode = 1;
     }
 }
 

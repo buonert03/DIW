@@ -3,55 +3,16 @@
     <h3>🩺 Xestión de doctores</h3>
     <!-- El formulario cambia entre alta y edición según el doctor cargado. -->
     <form @submit.prevent="guardarDoctor">
-      <!-- fila 1: DNI, apelido, nome e colexiado -->
+      <!-- fila 1: identificador, apelido, nome e colexiado -->
       <div class="fila">
         <div class="campo campo-id">
+          <label for="id-doctor">ID Doctor</label>
           <div class="dni-cabecera">
-            <label for="dni-doctor">DNI:<span class="obrigatorio" aria-hidden="true">*</span></label>
-            <div class="dni-acciones">
-              <button
-                type="button"
-                @click="buscarDoctor"
-                :disabled="editando"
-                title="Buscar"
-                aria-label="Buscar doctor por DNI"
-              >
-                🔍
-              </button>
-              <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
-                🧹
-              </button>
-            </div>
+            <input id="id-doctor" :value="idDoctorEditado || 'Xerarase ao gardar'" type="text" disabled>
+            <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
+              🧹
+            </button>
           </div>
-          <input
-            id="dni-doctor"
-            v-model.trim="novoDoctor.iddoc"
-            type="text"
-            required
-            maxlength="9"
-            autocomplete="off"
-            class="centrado"
-            :class="{ 'campo-erro': dniIncorrecto }"
-            :aria-invalid="dniIncorrecto"
-            aria-describedby="dni-doctor-erro dni-doctor-estado"
-            :disabled="editando"
-            @focus="limparComprobacionDni"
-            @input="limparComprobacionDni"
-            @blur="aoPerderFocoDni"
-          />
-          <span v-if="dniIncorrecto" id="dni-doctor-erro" class="mensaxe-erro" role="alert">
-            DNI ou NIE non válido
-          </span>
-          <Transition name="aviso-dni">
-            <span
-              v-if="comprobacionDni"
-              id="dni-doctor-estado"
-              :class="['mensaxe-dni', `mensaxe-dni--${comprobacionDni}`]"
-              role="status"
-            >
-              {{ textoComprobacionDni }}
-            </span>
-          </Transition>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -153,10 +114,20 @@
         <caption>
           Listaxe de doctores
         </caption>
+        <colgroup>
+          <col class="col-numero">
+          <col class="col-id">
+          <col class="col-apelido">
+          <col class="col-nome">
+          <col class="col-colexiado">
+          <col class="col-telefono">
+          <col class="col-especialidade">
+          <col class="col-acciones">
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Nº</th>
-            <th scope="col">DNI</th>
+            <th scope="col">ID</th>
             <th scope="col">Apelido</th>
             <th scope="col">Nome</th>
             <th scope="col">Colexiado</th>
@@ -169,20 +140,28 @@
           <tr v-for="(d, index) in doctores" :key="index">
             <!-- números (nº, ID, teléfono) centrados; o texto queda á esquerda -->
             <td class="centrado">{{ index + 1 }}</td>
-            <td class="centrado">{{ d.iddoc }}</td>
+            <td class="centrado">{{ d._id }}</td>
             <td>{{ d.apeldoc }}</td>
             <td>{{ d.nomedoc }}</td>
             <td>{{ d.coledoc ? "Si" : "Non" }}</td>
             <td class="centrado">{{ d.movildoc }}</td>
             <td>{{ d.espedoc }}</td>
             <td class="centrado">
-              <button @click="editarDoctor(index)" title="Editar" :aria-label="`Editar a ${d.nomedoc} ${d.apeldoc}`">
-                ✏️
-              </button>
-              <button @click="eliminarDoctor(index)" title="Eliminar"
-                :aria-label="`Eliminar a ${d.nomedoc} ${d.apeldoc}`">
-                🗑️
-              </button>
+              <div class="acciones-doctor">
+                <button
+                  :class="{ 'boton-seleccionado': editando && idDoctorEditado === d._id }"
+                  :disabled="editando && idDoctorEditado === d._id"
+                  :title="editando && idDoctorEditado === d._id ? 'Doctor seleccionado para editar' : 'Editar'"
+                  :aria-label="editando && idDoctorEditado === d._id ? `Doctor ${d.nomedoc} ${d.apeldoc} seleccionado para editar` : `Editar a ${d.nomedoc} ${d.apeldoc}`"
+                  @click="editarDoctor(index)"
+                >
+                  {{ editando && idDoctorEditado === d._id ? "✓" : "✏️" }}
+                </button>
+                <button @click="eliminarDoctor(index)" title="Eliminar"
+                  :aria-label="`Eliminar a ${d.nomedoc} ${d.apeldoc}`">
+                  🗑️
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -194,7 +173,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { obtenerEspecialidades } from "../api/especialidades.js";
 import { descargarTablaPdf } from "../utils/pdf.js";
 import { useDoctorStore } from "../store/doctorStore.js";
@@ -203,7 +182,6 @@ import {
   getDoctorByEspecialidad,
   saveDoctor,
   deleteDoctor,
-  getDoctorByDni,
   modifyDoctor,
 } from "../api/doctores.js";
 
@@ -215,17 +193,12 @@ const especialidades = ref([]);
 const editando = ref(false);
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
-const dniIncorrecto = ref(false);
 const buscandoEspecialidade = ref(false);
 const especialidadeBuscada = ref("");
 const idDoctorEditado = ref("");
-const comprobacionDni = ref("");
-let solicitudeComprobacionDni = 0;
-const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";
 
 // Valores ligados aos controis do formulario.
 const novoDoctor = reactive({
-  iddoc: "",
   apeldoc: "",
   nomedoc: "",
   maildoc: "",
@@ -244,10 +217,10 @@ function imprimirDoctores() {
   descargarTablaPdf({
     titulo: especialidad ? `Doctores de ${especialidad}` : "Listaxe de doctores",
     nombreArchivo: `doctores${sufijo}.pdf`,
-    columnas: ["Nº", "DNI", "Apelido", "Nome", "Colexiado", "Telefono", "Especialidade"],
+    columnas: ["Nº", "ID", "Apelido", "Nome", "Colexiado", "Telefono", "Especialidade"],
     filas: doctores.value.map((doctor, index) => [
       index + 1,
-      doctor.iddoc || "",
+      doctor._id || "",
       doctor.apeldoc || "",
       doctor.nomedoc || "",
       doctor.coledoc ? "Si" : "Non",
@@ -303,97 +276,6 @@ function seleccionarDoctor(doctor) {
   doctorStore.seleccionarDoctor(doctor);
 }
 
-// Valida DNI y NIE usando el formato y el cálculo de la letra de control.
-function dniDoctorValido(valor) {
-  const dni = valor.trim().toUpperCase();
-  if (/^\d{8}[A-Z]$/.test(dni)) {
-    return dni[8] === LETRAS_DNI[Number(dni.slice(0, 8)) % 23];
-  }
-  if (/^[XYZ]\d{7}[A-Z]$/.test(dni)) {
-    const prefixo = { X: "0", Y: "1", Z: "2" }[dni[0]];
-    return dni[8] === LETRAS_DNI[Number(prefixo + dni.slice(1, 8)) % 23];
-  }
-  return false;
-}
-
-// Normaliza el documento del formulario y marca los valores que no pasan la validación.
-function validarDniDoctor() {
-  const dni = novoDoctor.iddoc.trim().toUpperCase();
-  dniIncorrecto.value = dni !== "" && !dniDoctorValido(dni);
-  if (dniDoctorValido(dni)) {
-    novoDoctor.iddoc = dni;
-  } else {
-    novoDoctor.iddoc = "";
-  }
-}
-
-// Traduce el estado interno de la consulta de DNI al texto de la interfaz.
-const textoComprobacionDni = computed(() => {
-  const mensaxes = {
-    existe: "Este DNI ya está registrado.",
-    libre: "Este DNI no está registrado.",
-    erro: "No se pudo comprobar el DNI. Inténtalo de nuevo.",
-  };
-  return mensaxes[comprobacionDni.value] || "";
-});
-
-// Invalida consultas pendientes para que una respuesta antigua no cambie el mensaje actual.
-function limparComprobacionDni() {
-  solicitudeComprobacionDni += 1;
-  comprobacionDni.value = "";
-  dniIncorrecto.value = false;
-}
-
-// Al salir del campo comprueba en el servidor si el DNI ya está registrado.
-async function aoPerderFocoDni() {
-  validarDniDoctor();
-  if (dniIncorrecto.value || !novoDoctor.iddoc) return;
-
-  const dni = novoDoctor.iddoc;
-  const solicitude = ++solicitudeComprobacionDni;
-  try {
-    await getDoctorByDni(dni);
-    if (solicitude === solicitudeComprobacionDni && novoDoctor.iddoc === dni) {
-      comprobacionDni.value = "existe";
-    }
-  } catch (error) {
-    if (solicitude !== solicitudeComprobacionDni || novoDoctor.iddoc !== dni) return;
-    if (error.response?.status === 404) {
-      comprobacionDni.value = "libre";
-    } else {
-      comprobacionDni.value = "erro";
-      console.error("Erro ao comprobar o DNI do doutor:", error);
-    }
-  }
-}
-
-// Busca el doctor por DNI y carga sus datos para edición si existe.
-async function buscarDoctor() {
-  validarDniDoctor();
-  if (dniIncorrecto.value || !novoDoctor.iddoc) return;
-
-  try {
-    const doctor = await getDoctorByDni(novoDoctor.iddoc);
-    Object.assign(novoDoctor, doctor);
-    delete novoDoctor._id;
-    delete novoDoctor.__v;
-    editando.value = true;
-    idDoctorEditado.value = doctor.iddoc;
-    correoInvalido.value = false;
-    telefonoIncorrecto.value = false;
-    seleccionarDoctor(doctor);
-  } catch (error) {
-    if (error.response?.status === 404) {
-      editando.value = false;
-      idDoctorEditado.value = "";
-      comprobacionDni.value = "libre";
-    } else {
-      console.error("Erro ao buscar o doutor:", error);
-      window.alert(error.response?.data?.mensaje || "Non se puido buscar o doutor.");
-    }
-  }
-}
-
 // Normaliza el uso de mayúsculas en cada palabra del nombre o apellido.
 function formatearNome(valor) {
   return valor
@@ -443,20 +325,15 @@ const limpiarFormdoc = () => {
   idDoctorEditado.value = "";
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
-  dniIncorrecto.value = false;
-  limparComprobacionDni();
 };
 
 // Valida datos y crea o actualiza el doctor; luego recarga el listado.
 async function guardarDoctor() {
-  validarDniDoctor();
   validarTelefono();
   validarCorreo();
   if (
-    dniIncorrecto.value ||
     telefonoIncorrecto.value ||
     correoInvalido.value ||
-    !novoDoctor.iddoc ||
     !novoDoctor.nomedoc ||
     !novoDoctor.apeldoc ||
     !novoDoctor.espedoc
@@ -486,11 +363,9 @@ function editarDoctor(index) {
   delete novoDoctor._id;
   delete novoDoctor.__v;
   editando.value = true;
-  idDoctorEditado.value = doctores.value[index].iddoc;
-  dniIncorrecto.value = false;
+  idDoctorEditado.value = doctores.value[index]._id;
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
-  limparComprobacionDni();
   seleccionarDoctor(doctores.value[index]);
 }
 
@@ -502,10 +377,10 @@ async function eliminarDoctor(index) {
   }
 
   try {
-    await deleteDoctor(doctor.iddoc);
+    await deleteDoctor(doctor._id);
     doctores.value = await getDoctores();
     especialidadeBuscada.value = "";
-    if (novoDoctor.iddoc === doctor.iddoc) {
+    if (idDoctorEditado.value === doctor._id) {
       limpiarFormdoc();
     }
   } catch (error) {
@@ -793,17 +668,27 @@ input.campo-erro {
 
 table {
   width: 100%;
-  min-width: 50rem;
+  min-width: 46rem;
+  table-layout: fixed;
   margin-top: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   border: 1px solid var(--border);
   border-collapse: collapse;
 }
 
+.col-numero { width: 5%; }
+.col-id { width: 19%; }
+.col-apelido { width: 14%; }
+.col-nome { width: 12%; }
+.col-colexiado { width: 10%; }
+.col-telefono { width: 13%; }
+.col-especialidade { width: 15%; }
+.col-acciones { width: 12%; }
+
 th,
 td {
   border: 1px solid var(--border);
-  padding: 0.7rem;
+  padding: 0.55rem;
 }
 
 th {
@@ -815,6 +700,25 @@ th {
 
 td:last-child {
   white-space: nowrap;
+}
+
+.col-id,
+.col-especialidade {
+  overflow-wrap: anywhere;
+}
+
+.acciones-doctor {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.boton-seleccionado {
+  color: #198754;
+  font-size: 1.25em;
+  font-weight: 700;
+  opacity: 1;
+  cursor: default;
 }
 
 /* o caption só o len os lectores de pantalla (xa hai un título visible enriba) */

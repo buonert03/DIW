@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 // Define los campos del paciente; el DNI se normaliza al guardar y no puede modificarse.
 const PacienteSchema = new mongoose.Schema({
-    dnipac: { type: String, required: true, unique: false, trim: true, uppercase: true, immutable: true },
+    dnipac: { type: String, required: true},
     nomepac: { type: String, required: true },
     apelpac: { type: String, required: true },
     nacipac: { type: String, required: false },

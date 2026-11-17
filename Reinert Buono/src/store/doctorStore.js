@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 export const useDoctorStore = defineStore('doctor', {
   state: () => ({
     doctores: [],
-    iddoc: null,
+    doctorId: null,
     nomedoc: null,
     apeldoc: null,
   }),
@@ -12,13 +12,13 @@ export const useDoctorStore = defineStore('doctor', {
   actions: {
     // Copia al estado global los datos que identifican al doctor seleccionado.
     seleccionarDoctor(doctor) {
-      this.iddoc = doctor.iddoc;
+      this.doctorId = doctor._id;
       this.nomedoc = doctor.nomedoc;
       this.apeldoc = doctor.apeldoc;
     },
     // Limpia la selección cuando deja de haber un doctor activo.
     limpiarDoctor() {
-      this.iddoc = null;
+      this.doctorId = null;
       this.nomedoc = null;
       this.apeldoc = null;
     },

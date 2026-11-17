@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+/*import mongoose from "mongoose";
 import { randomUUID } from "node:crypto";
 
 // Esquema de las citas; timestamps añade createdAt y updatedAt a cada registro.
@@ -80,3 +80,35 @@ export async function seguinteIdCita() {
 }
 
 export default Cita;
+*/
+import mongoose from "mongoose";
+
+const CitaSchema = new mongoose.Schema(
+    {
+        pacienteDNI: {
+            type: String,
+            required: true
+        },
+        doctorId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Doctor",
+            required: true
+        },
+        fecha: { type: String, required: true },
+        hora: { type: String, required: true },
+        motivo: { type: String, required: true },
+        observacions: {
+            type: String,
+            default: ""
+        },
+        estado: {
+            type: String,
+            default: "pendente"
+        }
+    },
+    {
+        collection: "citas"
+    }
+);
+
+export default mongoose.model("Cita", CitaSchema);

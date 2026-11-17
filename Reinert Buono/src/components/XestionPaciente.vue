@@ -116,9 +116,9 @@
       </div>
       <div class="fila fila-gardar">
         <label>
-          <input v-model="novoPaciente.lopdpac" type="checkbox" />Acceptar a 
+          <input v-model="novoPaciente.lopdpac" type="checkbox" /> Acepto la
           <a :href="$router.resolve({ name: 'PoliticaPrivacidad'}).href" target="_blank" rel="noopener noreferrer">
-            Politica de privacidade e confidencialidade.
+            Política de privacidade e confidencialidade.
           </a>
         </label>
 
@@ -172,6 +172,15 @@
     <div v-if="pacientes.length > 0" class="tabla-contenedor" role="region" aria-label="Listaxe de pacientes" tabindex="0">
       <table>
         <caption>Listaxe de pacientes</caption>
+        <colgroup>
+          <col class="col-numero">
+          <col class="col-dni">
+          <col class="col-apelido">
+          <col class="col-nome">
+          <col class="col-telefono">
+          <col class="col-correo">
+          <col class="col-acciones">
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">#</th>
@@ -191,11 +200,21 @@
             <td>{{ p.apelpac }}</td>
             <td>{{ p.nomepac }}</td>
             <td class="centrado">{{ p.movilpac }}</td>
-            <td>{{ p.mailpac }}</td>
+            <td class="celda-correo">{{ p.mailpac }}</td>
             <td class="centrado">
-              <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
-              <button @click="abrirCitas(p)" title="Ver citas" :aria-label="`Ver as citas de ${p.nomepac} ${p.apelpac}`">📅</button>
-              <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
+              <div class="acciones-paciente">
+                <button
+                  :class="{ 'boton-seleccionado': editando && novoPaciente.dnipac === p.dnipac }"
+                  :disabled="editando && novoPaciente.dnipac === p.dnipac"
+                  :title="editando && novoPaciente.dnipac === p.dnipac ? 'Paciente seleccionado para editar' : 'Editar'"
+                  :aria-label="editando && novoPaciente.dnipac === p.dnipac ? `Paciente ${p.nomepac} ${p.apelpac} seleccionado para editar` : `Editar a ${p.nomepac} ${p.apelpac}`"
+                  @click="editarUsuario(index)"
+                >
+                  {{ editando && novoPaciente.dnipac === p.dnipac ? "✓" : "✏️" }}
+                </button>
+                <button @click="abrirCitas(p)" title="Ver citas" :aria-label="`Ver as citas de ${p.nomepac} ${p.apelpac}`">📅</button>
+                <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -758,17 +777,26 @@ input.campo-erro {
 
 table {
   width: 100%;
-  min-width: 70rem;
+  min-width: 52rem;
+  table-layout: fixed;
   margin-top: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   border: 1px solid var(--border);
   border-collapse: collapse;
 }
 
+.col-numero { width: 4%; }
+.col-dni { width: 16%; }
+.col-apelido,
+.col-nome { width: 15%; }
+.col-telefono { width: 13%; }
+.col-correo { width: 19%; }
+.col-acciones { width: 18%; }
+
 th,
 td {
   border: 1px solid var(--border);
-  padding: 0.7rem;
+  padding: 0.55rem;
 }
 
 th {
@@ -780,6 +808,24 @@ th {
 
 td:last-child {
   white-space: nowrap;
+}
+
+.celda-correo {
+  overflow-wrap: anywhere;
+}
+
+.acciones-paciente {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.boton-seleccionado {
+  color: #198754;
+  font-size: 1.25em;
+  font-weight: 700;
+  opacity: 1;
+  cursor: default;
 }
 
 /* o caption só o len os lectores de pantalla (xa hai un título visible enriba) */

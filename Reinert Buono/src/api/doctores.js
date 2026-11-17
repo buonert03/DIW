@@ -19,38 +19,20 @@ export async function getDoctores() {
 
 // Filtra por especialidad y ordena los resultados por apellido.
 export async function getDoctorByEspecialidad(especialidad) {
-    const res = await axios.get(`${API_URL}/doctores/${encodeURIComponent(especialidad)}`);
+    const res = await axios.get(`${API_URL}/doctores/especialidad/${encodeURIComponent(especialidad)}`);
     res.data.sort((a, b) =>
         a.apeldoc.localeCompare(b.apeldoc, "es", { sensitivity: "base" }));
     return res.data;
 } 
 
-// Busca un doctor por DNI; como alternativa a un 404, compara localmente el listado.
-export async function getDoctorByDni(dni) {
-    try {
-        const res = await axios.get(`${API_URL}/doctores/dni/${encodeURIComponent(dni)}`);
-        return res.data;
-    } catch (error) {
-        if (error.response?.status !== 404) throw error;
-
-        const dniNormalizado = dni.trim().toUpperCase();
-        const doctores = await getDoctores();
-        const doctor = doctores.find(
-            (item) => item.iddoc.trim().toUpperCase() === dniNormalizado
-        );
-        if (doctor) return doctor;
-        throw error;
-    }
-}
-
 // Actualiza el doctor identificado por su ID y devuelve el registro guardado.
 export async function modifyDoctor(id, doctor) {
-    const res = await axios.put(`${API_URL}/doctores/${id}`, doctor);
+    const res = await axios.put(`${API_URL}/doctores/${encodeURIComponent(id)}`, doctor);
     return res.data;
 }   
 
 // Elimina el doctor identificado por su ID.
 export async function deleteDoctor(id) {
-    const res = await axios.delete(`${API_URL}/doctores/${id}`);
+    const res = await axios.delete(`${API_URL}/doctores/${encodeURIComponent(id)}`);
     return res.data;
 }
