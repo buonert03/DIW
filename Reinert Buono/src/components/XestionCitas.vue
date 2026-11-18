@@ -18,24 +18,16 @@
     <!-- El formulario sirve tanto para crear una cita como para editar la seleccionada. -->
     <form class="formulario-cita" @submit.prevent="gardarCitaFormulario">
       <div class="campos">
-        <div class="campo">
+        <div class="campo campo-id-cita">
           <label for="id-cita">ID Cita</label>
           <input id="id-cita" :value="novaCita._id || 'Xerarase ao gardar'" type="text" disabled>
         </div>
-        <div class="campo">
-          <label for="dni">DNI Paciente<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input
-            id="dni"
-            v-model.trim="novaCita.pacienteDNI"
-            type="text"
-            autocomplete="off"
-            required
-            :readonly="Boolean(paciente)"
-            @input="cambiarDni"
-          >
+        <div class="campo campo-id-doctor">
+          <label for="id-doctor">ID Doctor</label>
+          <input id="id-doctor" :value="novaCita.doctorId" type="text" disabled>
         </div>
-        <div class="campo">
-          <label for="doctor">Nome Doctor<span class="obrigatorio" aria-hidden="true">*</span></label>
+        <div class="campo campo-doctor">
+          <label for="doctor">Doctor<span class="obrigatorio" aria-hidden="true">*</span></label>
           <select
             id="doctor"
             v-model="novaCita.doctorId"
@@ -47,15 +39,31 @@
             </option>
           </select>
         </div>
-        <div class="campo">
-          <label for="id-doctor">ID Doctor</label>
-          <input id="id-doctor" :value="novaCita.doctorId" type="text" disabled>
+        <div class="campo campo-dni">
+          <label for="dni">DNI Paciente<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input
+            id="dni"
+            v-model.trim="novaCita.pacienteDNI"
+            type="text"
+            autocomplete="off"
+            required
+            :readonly="Boolean(paciente)"
+            @input="cambiarDni"
+          >
         </div>
-        <div class="campo">
+        <div class="campo campo-estado">
+          <label for="estado">Estado<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <select id="estado" v-model="novaCita.estado" required>
+            <option value="pendente">Pendiente</option>
+            <option value="realizada">Realizada</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+        <div class="campo campo-fecha">
           <label for="fecha">Fecha<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="fecha" v-model="novaCita.fecha" type="date" :min="hoxe" required>
         </div>
-        <div class="campo">
+        <div class="campo campo-hora">
           <label for="hora">Hora<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="hora" v-model="novaCita.hora" type="time" required>
         </div>
@@ -66,14 +74,6 @@
         <div class="campo campo-diagnostico">
           <label for="observacions">Observaciones</label>
           <textarea id="observacions" v-model.trim="novaCita.observacions" rows="2"></textarea>
-        </div>
-        <div class="campo">
-          <label for="estado">Estado<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <select id="estado" v-model="novaCita.estado" required>
-            <option value="pendente">Pendiente</option>
-            <option value="realizada">Realizada</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
         </div>
       </div>
       <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obligatorio</p>
@@ -107,7 +107,7 @@
     <div v-if="citas.length" class="listaxe">
       <div class="listaxe-filtros">
         <select v-model="estadoSeleccionado" aria-label="Estado para filtrar citas">
-          <option value="">Selecciona un estado</option>
+          <option value="">Filtrar por estado</option>
           <option value="pendente">Pendiente</option>
           <option value="realizada">Realizada</option>
           <option value="cancelada">Cancelada</option>
@@ -162,7 +162,7 @@
               <td>{{ cita._id }}</td>
               <td>{{ cita.pacienteDNI }}</td>
               <td>{{ nomeDoctor(cita) }}</td>
-              <td>{{ cita.fecha }}</td>
+              <td>{{ formatearFecha(cita.fecha) }}</td>
               <td>{{ cita.hora }}</td>
               <td>{{ cita.motivo || "—" }}</td>
               <td>{{ cita.observacions || "—" }}</td>
@@ -190,7 +190,7 @@
               </td>
             </tr>
             <tr v-if="!citasVisibles.length">
-              <td colspan="10">No hay citas en este estado.</td>
+              <td colspan="9">No hay citas en este estado.</td>
             </tr>
           </tbody>
         </table>
@@ -212,8 +212,10 @@ import {
   obterCitas,
 } from "../api/citas.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
+import { useDoctorStore } from "../store/doctorStore.js";
 
 const pacienteStore = usePacienteStore();
+const doctorStore = useDoctorStore();
 // Sincroniza el contexto de la vista con la selección compartida desde pacientes.
 const paciente = computed(() => pacienteStore.pacienteSeleccionado);
 const pacienteConsultado = ref(null);
@@ -268,6 +270,12 @@ function nomeDoctor(cita) {
   return [doctor?.nomedoc, doctor?.apeldoc].filter(Boolean).join(" ") || "—";
 }
 
+function formatearFecha(fecha) {
+  if (typeof fecha !== "string") return "";
+  const [ano, mes, dia] = fecha.split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : fecha;
+}
+
 function textoEstado(estado) {
   return {
     pendente: "Pendiente",
@@ -301,7 +309,7 @@ function imprimirCitas() {
       cita.pacienteDNI || "",
       nomeDoctor(cita),
       cita.doctorId?._id || cita.doctorId || "",
-      cita.fecha || "",
+      formatearFecha(cita.fecha),
       cita.hora || "",
       cita.motivo || "—",
       cita.observacions || "—",
@@ -317,6 +325,9 @@ onMounted(async () => {
     if (paciente.value?.dnipac) {
       novaCita.pacienteDNI = paciente.value.dnipac;
       await cargarCitas(paciente.value.dnipac);
+    }
+    if (doctorStore.doctorId) {
+      novaCita.doctorId = doctorStore.doctorId;
     }
   } catch (error) {
     amosarErro(error, "Non se puideron cargar os doutores ou as citas");
@@ -544,9 +555,47 @@ h2 {
 
 .campos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 0.75rem;
+}
+
+.campos > .campo-id-cita,
+.campos > .campo-id-doctor,
+.campos > .campo-estado {
+  grid-column: span 2;
+}
+
+.campos > .campo-doctor,
+.campos > .campo-dni {
+  grid-column: span 3;
+}
+
+.campos > .campo-fecha,
+.campos > .campo-hora {
+  grid-column: span 2;
+}
+
+.campos > .campo-motivo {
+  grid-column: span 8;
+}
+
+.campos > .campo-diagnostico {
+  grid-column: span 12;
+}
+
+.campo-dni,
+.campo-fecha,
+.campo-hora {
+  min-width: 0;
+}
+
+.campo-motivo textarea {
+  min-height: 5rem;
+}
+
+.campo-diagnostico textarea {
+  min-height: 7rem;
 }
 
 .campo {
@@ -656,7 +705,7 @@ button.boton-eliminar {
 /* Filtros, encabezado y tabla con desplazamiento para pantallas estrechas. */
 .listaxe-filtros {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
@@ -664,8 +713,10 @@ button.boton-eliminar {
 }
 
 .listaxe-filtros select {
+  margin-right: auto;
   min-width: 12rem;
   max-width: 100%;
+  height: 2.3rem;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -743,6 +794,28 @@ td:last-child {
 
   .tabla-contenedor {
     max-height: 60vh;
+  }
+
+  .campos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .campos > .campo,
+  .campos > .campo-id-cita,
+  .campos > .campo-id-doctor,
+  .campos > .campo-doctor,
+  .campos > .campo-dni,
+  .campos > .campo-estado,
+  .campos > .campo-fecha,
+  .campos > .campo-hora,
+  .campos > .campo-motivo,
+  .campos > .campo-diagnostico {
+    grid-column: span 1;
+  }
+
+  .campos > .campo-motivo,
+  .campos > .campo-diagnostico {
+    grid-column: span 2;
   }
 }
 </style>

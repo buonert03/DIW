@@ -3,55 +3,27 @@
     <h3>🩺 Xestión de doctores</h3>
     <!-- El formulario cambia entre alta y edición según el doctor cargado. -->
     <form @submit.prevent="guardarDoctor">
-      <!-- fila 1: identificador, apelido, nome e colexiado -->
+      <!-- fila 1: identificador, apelido, nome e especialidade -->
       <div class="fila">
         <div class="campo campo-id">
-          <label for="id-doctor">ID Doctor</label>
-          <div class="dni-cabecera">
-            <input id="id-doctor" :value="idDoctorEditado || 'Xerarase ao gardar'" type="text" disabled>
+          <div class="id-doctor-cabecera">
+            <label for="id-doctor">ID Doctor:</label>
             <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
               🧹
             </button>
           </div>
+          <input id="id-doctor" :value="idDoctorEditado || 'Xerarase ao gardar'" type="text" disabled>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="apelido" v-model="novoDoctor.apeldoc" type="text" required autocomplete="family-name"
+            @input="actualizarFiltroApelido"
             @blur="novoDoctor.apeldoc = formatearNome(novoDoctor.apeldoc)" />
         </div>
         <div class="campo campo-nome">
           <label for="nome">Nome:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="nome" v-model="novoDoctor.nomedoc" type="text" required autocomplete="given-name"
             @blur="novoDoctor.nomedoc = formatearNome(novoDoctor.nomedoc)" />
-        </div>
-        <!-- fieldset + legend: os lectores de pantalla len "Colexiado" antes de Si/Non -->
-        <fieldset class="campo campo-colexiado">
-          <legend>
-            Colexiado:<span class="obrigatorio" aria-hidden="true">*</span>
-          </legend>
-          <label><input v-model="novoDoctor.coledoc" type="radio" name="coledoc" :value="true" />
-            Si</label>
-          <label><input v-model="novoDoctor.coledoc" type="radio" name="coledoc" :value="false" />
-            Non</label>
-        </fieldset>
-      </div>
-      <!-- fila 2: teléfono, correo e especialidade -->
-      <div class="fila">
-        <div class="campo campo-telefono">
-          <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input id="telefono" v-model="novoDoctor.movildoc" type="tel" inputmode="numeric" required maxlength="9"
-            autocomplete="tel" class="centrado" :class="{ 'campo-erro': telefonoIncorrecto }"
-            :aria-invalid="telefonoIncorrecto" aria-describedby="telefono-erro" @focus="telefonoIncorrecto = false"
-            @blur="validarTelefono" />
-          <span v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">Telefono non
-            válido</span>
-        </div>
-        <div class="campo campo-correo">
-          <label for="correo">Correo:</label>
-          <input id="correo" v-model="novoDoctor.maildoc" type="email" autocomplete="email"
-            :class="{ 'campo-erro': correoInvalido }" :aria-invalid="correoInvalido" aria-describedby="correo-erro"
-            @focus="correoInvalido = false" @blur="validarCorreo" />
-          <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
         </div>
         <div class="campo campo-especialidade">
           <div class="especialidade-cabecera">
@@ -86,6 +58,35 @@
             </option>
           </select>
         </div>
+      </div>
+      <!-- fila 2: teléfono, correo e colexiación -->
+      <div class="fila">
+        <div class="campo campo-telefono">
+          <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input id="telefono" v-model="novoDoctor.movildoc" type="tel" inputmode="numeric" required maxlength="9"
+            autocomplete="tel" class="centrado" :class="{ 'campo-erro': telefonoIncorrecto }"
+            :aria-invalid="telefonoIncorrecto" aria-describedby="telefono-erro" @focus="telefonoIncorrecto = false"
+            @blur="validarTelefono" />
+          <span v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">Telefono non
+            válido</span>
+        </div>
+        <div class="campo campo-correo">
+          <label for="correo">Correo:</label>
+          <input id="correo" v-model="novoDoctor.maildoc" type="email" autocomplete="email"
+            :class="{ 'campo-erro': correoInvalido }" :aria-invalid="correoInvalido" aria-describedby="correo-erro"
+            @focus="correoInvalido = false" @blur="validarCorreo" />
+          <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
+        </div>
+        <!-- fieldset + legend: os lectores de pantalla len "Colexiado" antes de Si/Non -->
+        <fieldset class="campo campo-colexiado">
+          <legend>
+            Colexiado:<span class="obrigatorio" aria-hidden="true">*</span>
+          </legend>
+          <label><input v-model="novoDoctor.coledoc" type="radio" name="coledoc" :value="true" />
+            Si</label>
+          <label><input v-model="novoDoctor.coledoc" type="radio" name="coledoc" :value="false" />
+            Non</label>
+        </fieldset>
       </div>
       <div class="fila fila-gardar">
         <button type="submit" class="btn-guardar" :disabled="novoDoctor.nomedoc === '' ||
@@ -157,6 +158,13 @@
                 >
                   {{ editando && idDoctorEditado === d._id ? "✓" : "✏️" }}
                 </button>
+                <button
+                  @click="abrirCitas(d)"
+                  title="Crear o consultar citas"
+                  :aria-label="`Crear ou consultar citas de ${d.nomedoc} ${d.apeldoc}`"
+                >
+                  📅
+                </button>
                 <button @click="eliminarDoctor(index)" title="Eliminar"
                   :aria-label="`Eliminar a ${d.nomedoc} ${d.apeldoc}`">
                   🗑️
@@ -173,7 +181,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { obtenerEspecialidades } from "../api/especialidades.js";
 import { descargarTablaPdf } from "../utils/pdf.js";
 import { useDoctorStore } from "../store/doctorStore.js";
@@ -186,8 +195,18 @@ import {
 } from "../api/doctores.js";
 
 // Registros e opcións que se amosan na táboa e no selector.
-const doctores = ref([]);
+const doctoresBase = ref([]);
+const filtroApelido = ref("");
+const doctores = computed(() => {
+  const apelido = filtroApelido.value.trim().toLocaleLowerCase();
+  return apelido
+    ? doctoresBase.value.filter((doctor) =>
+        String(doctor.apeldoc ?? "").toLocaleLowerCase().includes(apelido)
+      )
+    : doctoresBase.value;
+});
 const especialidades = ref([]);
+const router = useRouter();
 
 // Estado de edición e erros de validación do formulario.
 const editando = ref(false);
@@ -232,7 +251,7 @@ function imprimirDoctores() {
 
 // Carga los doctores y el catálogo de especialidades al abrir la vista.
 onMounted(async () => {
-  doctores.value = await getDoctores();
+  doctoresBase.value = await getDoctores();
   especialidadeBuscada.value = "";
   especialidades.value = await obtenerEspecialidades();
 });
@@ -244,7 +263,7 @@ async function buscarPorEspecialidade() {
 
   buscandoEspecialidade.value = true;
   try {
-    doctores.value = await getDoctorByEspecialidad(especialidad);
+    doctoresBase.value = await getDoctorByEspecialidad(especialidad);
     especialidadeBuscada.value = especialidad;
   } catch (error) {
     console.error("Erro ao buscar doutores por especialidade:", error);
@@ -260,8 +279,9 @@ async function restablecerTablaDoctores() {
 
   buscandoEspecialidade.value = true;
   try {
-    doctores.value = await getDoctores();
+    doctoresBase.value = await getDoctores();
     especialidadeBuscada.value = "";
+    filtroApelido.value = "";
   } catch (error) {
     console.error("Erro ao restablecer a listaxe de doutores:", error);
     window.alert(error.response?.data?.mensaje || "Non se puido restablecer a listaxe.");
@@ -270,10 +290,20 @@ async function restablecerTablaDoctores() {
   }
 }
 
+function actualizarFiltroApelido(event) {
+  filtroApelido.value = event.target.value;
+}
+
 // Comparte la selección actual mediante el store de Pinia.
 function seleccionarDoctor(doctor) {
   const doctorStore = useDoctorStore();
   doctorStore.seleccionarDoctor(doctor);
+}
+
+// Abre la gestión de citas con el doctor seleccionado como contexto.
+function abrirCitas(doctor) {
+  seleccionarDoctor(doctor);
+  router.push({ name: "XestionCitas" });
 }
 
 // Normaliza el uso de mayúsculas en cada palabra del nombre o apellido.
@@ -313,7 +343,8 @@ function validarTelefono() {
 }
 
 // Reinicia los campos, los errores de validación y el modo de edición.
-const limpiarFormdoc = () => {
+const limpiarFormdoc = async () => {
+  const cargarTodos = Boolean(especialidadeBuscada.value);
   Object.keys(novoDoctor).forEach((key) => {
     if (typeof novoDoctor[key] === "boolean") {
       novoDoctor[key] = false;
@@ -325,6 +356,17 @@ const limpiarFormdoc = () => {
   idDoctorEditado.value = "";
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
+  filtroApelido.value = "";
+  especialidadeBuscada.value = "";
+
+  if (cargarTodos) {
+    try {
+      doctoresBase.value = await getDoctores();
+    } catch (error) {
+      console.error("Erro ao restablecer a listaxe ao limpar o formulario:", error);
+      window.alert(error.response?.data?.mensaje || "Non se puido restablecer a listaxe de doutores.");
+    }
+  }
 };
 
 // Valida datos y crea o actualiza el doctor; luego recarga el listado.
@@ -348,8 +390,9 @@ async function guardarDoctor() {
     } else {
       await saveDoctor(datosDoctor);
     }
-    doctores.value = await getDoctores();
+    doctoresBase.value = await getDoctores();
     especialidadeBuscada.value = "";
+    filtroApelido.value = "";
     limpiarFormdoc();
   } catch (error) {
     console.error("Erro ao gardar o doutor:", error);
@@ -358,15 +401,26 @@ async function guardarDoctor() {
 }
 
 // Copia un elemento de la tabla al formulario y activa el modo de edición.
-function editarDoctor(index) {
-  Object.assign(novoDoctor, doctores.value[index]);
+async function editarDoctor(index) {
+  const doctor = doctores.value[index];
+  try {
+    doctoresBase.value = await getDoctores();
+    especialidadeBuscada.value = "";
+    filtroApelido.value = "";
+  } catch (error) {
+    console.error("Erro ao restablecer a listaxe antes de editar:", error);
+    window.alert(error.response?.data?.mensaje || "Non se puido cargar a listaxe completa de doutores.");
+    return;
+  }
+
+  Object.assign(novoDoctor, doctor);
   delete novoDoctor._id;
   delete novoDoctor.__v;
   editando.value = true;
-  idDoctorEditado.value = doctores.value[index]._id;
+  idDoctorEditado.value = doctor._id;
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
-  seleccionarDoctor(doctores.value[index]);
+  seleccionarDoctor(doctor);
 }
 
 // Solicita confirmación antes de eliminar y actualiza la lista tras la respuesta.
@@ -378,8 +432,9 @@ async function eliminarDoctor(index) {
 
   try {
     await deleteDoctor(doctor._id);
-    doctores.value = await getDoctores();
+    doctoresBase.value = await getDoctores();
     especialidadeBuscada.value = "";
+    filtroApelido.value = "";
     if (idDoctorEditado.value === doctor._id) {
       limpiarFormdoc();
     }
@@ -419,8 +474,24 @@ form {
 
 .fila {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.fila:nth-of-type(2) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.campo > label,
+.id-doctor-cabecera,
+.especialidade-cabecera {
+  min-height: 2rem;
+  box-sizing: border-box;
+}
+
+.campo > label {
+  display: flex;
+  align-items: center;
 }
 
 .campo {
@@ -431,11 +502,21 @@ form {
   gap: 0.35rem;
 }
 
-.dni-cabecera {
+.id-doctor-cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.id-doctor-cabecera button {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .especialidade-cabecera {
@@ -518,8 +599,24 @@ td button {
   padding: 0;
 }
 
+@media (max-width: 768px) {
+  .fila,
+  .fila:nth-of-type(2) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .campo-especialidade,
+  .campo-colexiado {
+    grid-column: span 2;
+  }
+}
+
 .campo-colexiado legend {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  box-sizing: border-box;
   font-weight: 500;
 }
 
@@ -699,7 +796,14 @@ th {
 }
 
 td:last-child {
-  white-space: nowrap;
+  white-space: normal;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .col-id,
@@ -709,8 +813,19 @@ td:last-child {
 
 .acciones-doctor {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
+}
+
+.acciones-doctor button {
+  flex: 0 1 1.75rem;
+  width: 1.75rem;
+  max-width: 100%;
+  min-width: 0;
+  height: 1.75rem;
+  padding: 0;
 }
 
 .boton-seleccionado {
