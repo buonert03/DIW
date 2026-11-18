@@ -148,8 +148,7 @@
             <tr>
               <th scope="col">ID Cita</th>
               <th scope="col">DNI Paciente</th>
-              <th scope="col">Nombre Doctor</th>
-              <th scope="col">ID Doctor</th>
+              <th scope="col">Doctor</th>
               <th scope="col">Fecha</th>
               <th scope="col">Hora</th>
               <th scope="col">Motivo de la cita</th>
@@ -163,7 +162,6 @@
               <td>{{ cita._id }}</td>
               <td>{{ cita.pacienteDNI }}</td>
               <td>{{ nomeDoctor(cita) }}</td>
-              <td>{{ cita.doctorId?._id || cita.doctorId }}</td>
               <td>{{ cita.fecha }}</td>
               <td>{{ cita.hora }}</td>
               <td>{{ cita.motivo || "—" }}</td>
@@ -290,7 +288,7 @@ function imprimirCitas() {
     columnas: [
       "ID Cita",
       "DNI Paciente",
-      "Nombre Doctor",
+      "Doctor",
       "ID Doctor",
       "Fecha",
       "Hora",
